@@ -1,0 +1,10 @@
+*******à faire******
+
+files de messages pour une communication
+entre les processus sur la meme machine
+
+******utilisation*****
+
+forker le projet
+le compiler avec make  
+
