@@ -8,11 +8,15 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <semaphore.h>
+#include <stdarg.h>
+#include <syslog.h>
+
 
 typedef struct en_tete {
   size_t len_max, nb_msg;
   int first, last;
-  //semaphore a faire
+  sem_t * semaphore;
 }EN_TETE;
 
 typedef struct fileM {
@@ -26,7 +30,7 @@ typedef struct message {
 }MESSAGE;
 
 
-MESSAGE *msg_connect(const char *nom, int options...);
+MESSAGE *msg_connect(const char *nom, int options,...);
 
 int msg_disconnect(MESSAGE *file);
 
