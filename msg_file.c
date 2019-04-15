@@ -16,29 +16,43 @@ int absVal(int a) {
 }
 
 int ecrire(File_M * files, const void *msg, size_t len) {
-  if(len + 4 < absVal(files->first - files->last)) {
-    int f = files->first;
+
+  if(len < absVal(files->first - files->last)) {
     int l = files->last;
     memcpy(files->fileMsg+l, msg, len+1);
+    printf("%s\n", files->fileMsg);
     return 0;
   } else {
     return -1;
   }
 }
 
+void majEcriture(MESSAGE * file, size_t len) {
+
+  file->files->count++;
+  file->last = (file->last+len)%msg_capacite(file);
+
+}
+
 int msg_send(MESSAGE *file, const void *msg, size_t len) {
+
   pthread_mutex_lock( & file->files->mutex );
+
   if(filePleine(file)) {
-    int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex);
+    int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
     if( n!= 0 ){
       perror("wait mutex ERROR");
       return 0;
     }
+
   int size = ecrire(file->files, msg,len);
 
   pthread_mutex_unlock( & file->files->mutex );
-  pthread_cond_signal( & file->files->wr );
+  pthread_cond_signal( & file->files->rd );
 
+  if(!size) {
+    majEcriture(file,len);
+  }
   return size;
 }
 
@@ -48,4 +62,16 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
   } else {
     /******;
   }
+}
+
+size_t msg_message_size(MESSAGE * file) {
+  return file->files->len_max;
+}
+
+size_t msg_capacite(MESSAGE * file) {
+  return (file->files->len_max*file->files->nb_msg);
+}
+
+size_t msg_nb(MESSAGE * file) {
+  return file->files->count;
 }

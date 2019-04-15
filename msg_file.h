@@ -17,7 +17,7 @@
 typedef struct fileM {
 
   size_t len_max, nb_msg;
-  int first, last;
+  int first, last, count;
   pthread_mutex_t mutex;
   pthread_cond_t wr;
   pthread_cond_t rd;
@@ -33,6 +33,7 @@ typedef struct message {
 }MESSAGE;
 
 MESSAGE *msg_connect(const char *nom, int options,...);
+
 int msg_disconnect(MESSAGE *file);
 int msg_unlink(const char *nom);
 
