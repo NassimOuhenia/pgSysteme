@@ -8,39 +8,39 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <semaphore.h>
 #include <stdarg.h>
 #include <syslog.h>
+#include <stdarg.h>
 
-
-typedef struct en_tete {
-  size_t len_max, nb_msg;
-  int first, last;
-  sem_t * semaphore;
-}EN_TETE;
+#define MODE S_IRUSR | S_IWUSR
 
 typedef struct fileM {
-  EN_TETE e;
-  char * file;
-}FILE_M;
+
+  size_t len_max, nb_msg;
+  int first, last;
+  pthread_mutex_t mutex;
+  pthread_cond_t wr;
+  pthread_cond_t rd;
+  void * fileMsg;
+
+}File_M;
 
 typedef struct message {
+
   int option;
-  FILE_M * file;
+  File_M * files;
+
 }MESSAGE;
 
-
 MESSAGE *msg_connect(const char *nom, int options,...);
-
 int msg_disconnect(MESSAGE *file);
-
 int msg_unlink(const char *nom);
 
-int msg_send(MESSAGE *file, const char *msg, size_t len);
-int msg_trysend(MESSAGE *file, const char *msg, size_t len);
+int msg_send(MESSAGE *file, const void *msg, size_t len);
+int msg_trysend(MESSAGE *file, const void *msg, size_t len);
 
-size_t msg_receive(MESSAGE *file, char *msg, size_t len);
-size_t msg_tryreceive(MESSAGE *file, char *msg, size_t len);
+size_t msg_receive(MESSAGE *file, void *msg, size_t len);
+size_t msg_tryreceive(MESSAGE *file, void *msg, size_t len);
 
 size_t msg_message_size(MESSAGE *);
 size_t msg_capacite(MESSAGE *);
