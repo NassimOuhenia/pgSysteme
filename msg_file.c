@@ -6,7 +6,7 @@ size_t msg_message_size(MESSAGE * file) {
 }
 
 size_t msg_capacite(MESSAGE * file) {
-  return (file->files->len_max*file->files->nb_msg);
+  return ((sizeof(size_t)+file->files->len_max)*file->files->nb_msg);
 }
 
 size_t msg_nb(MESSAGE * file) {
@@ -142,8 +142,9 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
   }
 }
 
-
+/*
 int main (void) {
   printf("hello world\n");
   return 0;
 }
+*/
