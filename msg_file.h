@@ -6,6 +6,7 @@
 #include <sys/types.h> /* pour waitpid */
 #include <sys/wait.h> /* pour waitpid */
 #include <fcntl.h>
+#include <pthread.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <stdarg.h>
@@ -16,8 +17,8 @@
 
 typedef struct fileM {
 
-  size_t len_max, nb_msg, count = 0;
-  int first = -1, last = 0;
+  size_t len_max, nb_msg, count;
+  int first, last;
   pthread_mutex_t mutex;
   pthread_cond_t wr;
   pthread_cond_t rd;
@@ -32,6 +33,11 @@ typedef struct message {
 
 }MESSAGE;
 
+
+size_t msg_message_size(MESSAGE *);
+size_t msg_capacite(MESSAGE *);
+size_t msg_nb(MESSAGE *);
+
 MESSAGE *msg_connect(const char *nom, int options,...);
 
 int msg_disconnect(MESSAGE *file);
@@ -40,9 +46,5 @@ int msg_unlink(const char *nom);
 int msg_send(MESSAGE *file, const void *msg, size_t len);
 int msg_trysend(MESSAGE *file, const void *msg, size_t len);
 
-size_t msg_receive(MESSAGE *file, void *msg, size_t len);
-size_t msg_tryreceive(MESSAGE *file, void *msg, size_t len);
-
-size_t msg_message_size(MESSAGE *);
-size_t msg_capacite(MESSAGE *);
-size_t msg_nb(MESSAGE *);
+ssize_t msg_receive(MESSAGE *file, void *msg, size_t len);
+ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len);
