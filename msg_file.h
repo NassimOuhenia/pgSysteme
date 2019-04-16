@@ -16,8 +16,8 @@
 
 typedef struct fileM {
 
-  size_t len_max, nb_msg;
-  int first, last, count;
+  size_t len_max, nb_msg, count = 0;
+  int first = -1, last = 0;
   pthread_mutex_t mutex;
   pthread_cond_t wr;
   pthread_cond_t rd;
