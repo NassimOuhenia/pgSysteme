@@ -19,8 +19,8 @@ int ecrire(File_M * files, const void *msg, size_t len) {
 
   if(len < absVal(files->first - files->last)) {
     int l = files->last;
-    memcpy(files->fileMsg+l, msg, len+1);
-    memcpy(files->fileMsg+l+sizeof(size_t), len, sizeof(size_t));
+    memcpy(files->fileMsg+l, len, sizeof(size_t));
+    memcpy(files->fileMsg+l+sizeof(size_t), msg, len+1);
     printf("%s\n", files->fileMsg);
     return 0;
   } else {
@@ -75,15 +75,16 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
 
   int size = ecrire(file->files, msg,len);
 
-  pthread_mutex_unlock( & file->files->mutex );
-  pthread_cond_signal( & file->files->rd );
-
   if(!size) {
     if(fileVide(file)) {
       file->files->first = 0;
     }
     majEcriture(file,len);
   }
+
+  pthread_mutex_unlock( & file->files->mutex );
+  pthread_cond_signal( & file->files->rd );
+
   return size;
 }
 
@@ -109,12 +110,12 @@ ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
 
   int size = lire(file->files, msg,len);
 
-  pthread_mutex_unlock( & file->files->mutex );
-  pthread_cond_signal( & file->files->wd );
-
   if(size != -1) {
     majLecture(file,len);
   }
+
+  pthread_mutex_unlock( & file->files->mutex );
+  pthread_cond_signal( & file->files->wd );
 
   return size;
 }
