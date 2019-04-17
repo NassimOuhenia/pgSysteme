@@ -26,13 +26,242 @@ int absVal(int a) {
   return a;
 }
 
+
+
+MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
+
+  printf("%ld\n",nb_msg );
+
+  int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
+  if(fd<0)
+   {
+     perror("shm_open");
+   exit(2);
+   }
+
+
+
+  size_t len = nb_msg*len_max;
+  ftruncate(fd, len);
+  printf("%ld\n",len );
+
+  struct stat bufStat;
+  fstat(fd,&bufStat);
+
+      printf("%ld\n",bufStat.st_size);
+
+  void *tab = mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  if(tab == MAP_FAILED) {
+         perror("erreur de mmap");
+         exit(1);
+    }
+
+//-----------------------------------------------creation entete-------
+    char* nom_1;
+    nom_1=malloc( sizeof(nom));
+
+    strcpy(nom_1, nom);
+
+    char* nom_entete=strcat(nom_1,"entete");
+
+    printf("%s\n",nom_entete);
+
+    int fdE = shm_open(nom_entete,  options,S_IRUSR | S_IWUSR );
+
+    if(fdE<0)
+     {
+       perror("shm_open");
+       exit(2);
+     }
+size_t len1 =sizeof(File_M);
+ftruncate(fdE, len1);
+File_M * tab2 = (File_M *)mmap( 0 , len1 , PROT_READ | PROT_WRITE, MAP_SHARED, fdE, 0);
+if(tab2 == MAP_FAILED) {
+       perror("erreur de mmap");
+       exit(1);
+  }
+  fstat(fdE,&bufStat);
+
+      printf("%ld\n",bufStat.st_size);
+
+
+//initialisation de la file-------------------------------------------------------------------------------------------------------------------------------
+
+tab2->fileMsg=tab;
+tab2->len_max=len_max;
+tab2->nb_msg=nb_msg;
+tab2->first=-1;
+tab2->last=0;
+
+
+      MESSAGE* reponse=malloc( sizeof(File_M));
+      reponse->option=options;
+      reponse->files=tab2;
+
+
+      printf("%d\n",reponse->files->first);
+      return reponse;
+
+
+}
+
+
+MESSAGE* ouverture_file(const char *nom, int options){
+
+  int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
+
+  if(fd<0)
+   {
+     perror("shm_open");
+     exit(2);
+   }
+
+   struct stat bufStat;
+   fstat(fd,&bufStat);
+   size_t len=bufStat.st_size;
+       printf("%ld\n",bufStat.st_size);
+
+
+  void *tab = mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  if(tab == MAP_FAILED) {
+         perror("erreur de mmap");
+         exit(1);
+
+}
+
+//---------------------------------------------------------------------ouverture entete-----------------------------------
+char* nom_1;
+nom_1=malloc( sizeof(nom));
+
+strcpy(nom_1, nom);
+
+char* nom_entete=strcat(nom_1,"entete");
+
+printf("%s\n",nom_entete);
+
+int fdE = shm_open(nom_entete,  options,S_IRUSR | S_IWUSR );
+
+if(fdE<0)
+ {
+   perror("shm_open");
+   exit(2);
+ }
+
+ fstat(fdE,&bufStat);
+ size_t len2=bufStat.st_size;
+     printf("%ld\n",bufStat.st_size);
+
+File_M * tab2 = (File_M *)mmap( 0 , len2 , PROT_READ | PROT_WRITE, MAP_SHARED, fdE, 0);
+if(tab2 == MAP_FAILED) {
+   perror("erreur de mmap");
+   exit(1);
+}
+
+tab2->fileMsg=tab;
+
+  MESSAGE* reponse=malloc( sizeof(File_M));
+  reponse->option=options;
+  reponse->files=tab2;
+  return reponse;
+
+}
+
+MESSAGE* creation_file_anonyme(const char *nom, int options, size_t nb_msg, size_t len_max){
+
+
+
+  size_t len = nb_msg*len_max;
+  void* tab = mmap(NULL,len, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
+
+  if(tab == MAP_FAILED) {
+       perror("erreur de mmap");
+       exit(1);
+  }
+  int *p = tab;
+  *p = getpid();
+  struct stat bufStat;
+  fstat(*p,&bufStat);
+  printf("%ld\n", bufStat.st_size);
+  printf("%d\n",getpid() );
+  printf("%d\n",*p );
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+size_t len1 =sizeof(File_M);
+
+File_M * tab2 = (File_M *)mmap( NULL , len1 , PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
+if(tab2 == MAP_FAILED) {
+       perror("erreur de mmap");
+       exit(1);
+  }
+
+
+  //initialisation de la file-------------------------------------------------------------------------------------------------------------------------------
+
+  tab2->fileMsg=tab;
+  tab2->len_max=len_max;
+  tab2->nb_msg=nb_msg;
+  tab2->first=-1;
+  tab2->last=0;
+
+
+        MESSAGE* reponse=malloc( sizeof(File_M));
+        reponse->option=options;
+        reponse->files=tab2;
+
+
+        printf("%d\n",reponse->files->first);
+        return reponse;
+
+
+
+
+}
+
+//----------------------------------88888888888888888888888888888888888888888888888---------------------------------------------------------------------------------------------------------------------
+
+MESSAGE *msg_connect( const char *nom, int options,... ){
+
+  va_list va;
+   va_start (va, options);
+
+if (nom!="NULL") {
+  /* code */
+printf("%d\n",(options & O_CREAT));
+if(!(options & O_CREAT)==0){
+  size_t nb_msg = va_arg (va, size_t);
+  size_t len_max = va_arg (va, size_t);
+
+creation_file(nom,options,nb_msg,len_max);
+
+
+
+}else{
+
+ouverture_file(nom, options);
+
+}
+
+}else{
+  size_t nb_msg = va_arg (va, size_t);
+  size_t len_max = va_arg (va, size_t);
+  creation_file_anonyme(nom,options, nb_msg,len_max);
+
+}
+ va_end (va);
+
+
+}
+
+
+
 int ecrire(File_M * files, const void *msg, size_t len) {
 
   if(len < absVal(files->first - files->last)) {
     int l = files->last;
     memcpy(files->fileMsg+l, &len, sizeof(size_t));
     memcpy(files->fileMsg+l+sizeof(size_t), msg, len+1);
-    printf("%s\n", files->fileMsg);
+  //  printf("%s\n", files->fileMsg);
     return 0;
   } else {
     return -1;

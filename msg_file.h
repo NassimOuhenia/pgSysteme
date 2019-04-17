@@ -13,7 +13,12 @@
 #include <syslog.h>
 #include <stdarg.h>
 
+
+
+
+
 #define MODE S_IRUSR | S_IWUSR
+//#define __USE_MISC
 
 typedef struct fileM {
 
