@@ -27,7 +27,7 @@ typedef struct fileM {
   pthread_mutex_t mutex;
   pthread_cond_t wr;
   pthread_cond_t rd;
-  void * fileMsg;
+  char fileMsg[];
 
 }File_M;
 
