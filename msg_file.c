@@ -167,6 +167,7 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
 
 int ecrire(File_M * files, const void *msg, size_t len) {
 
+
   if(len < absVal(files->first - files->last)||files->first==-1) {
     int l = files->last;
     memcpy(files->fileMsg+l, &len, sizeof(size_t));
@@ -193,10 +194,6 @@ int lire(File_M * files, void *msg, size_t len) {
 
   memcpy(&lenMsg, files->fileMsg+fst, sizeof(size_t));
 
-  if(len < lenMsg) {
-    errno = EMSGSIZE;
-    return -1;
-  }
 
   memcpy(msg, files->fileMsg+fst+sizeof(size_t), lenMsg);
 
@@ -213,6 +210,11 @@ void majLecture(MESSAGE * file, size_t len) {
 
 
 int msg_send(MESSAGE *file, const void *msg, size_t len) {
+
+  if(len > file->files->len_max) {
+    errno = EMSGSIZE;
+    return -1;
+  }
 
   pthread_mutex_lock( & file->files->mutex );
 
@@ -243,19 +245,58 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   return size;
 }
 
-//-------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------
 
 int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
-  if(filePleine(file)) {
-    errno = EAGAIN;
+
+  if(len > file->files->len_max) {
+      printf("%s\n","filevide");
+    errno = EMSGSIZE;
     return -1;
+  }
+
+  if(filePleine(file)) {
+      printf("%s\n","filevide2");
+    errno = EAGAIN;
+
+    return -1;
+
   } else {
-    ////on verra après
+
+int response=pthread_mutex_trylock(& file->files->mutex);
+  printf("%s\n","filevide55");
+    printf("%d\n",response);
+if(response==0){
+    printf("%s\n","ecriture-------------------");
+
+  int size = ecrire(file->files, msg,len);
+
+  if(!size) {
+    if(fileVide(file)) {
+      printf("%s\n","filevide");
+      file->files->first = 0;
+    }
+    majEcriture(file,len);
+  }
+
+  pthread_mutex_unlock( & file->files->mutex );
+  pthread_cond_signal( & file->files->rd );
     return 0;
+
+}
+
+    ////on verra après
+    return -1;
   }
 }
 
 ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
+
+  if(len < file->files->len_max) {
+    errno = EMSGSIZE;
+    return -1;
+  }
+
   pthread_mutex_lock( & file->files->mutex );
   if(fileVide(file)) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutex );
@@ -279,13 +320,47 @@ ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
 }
 
 ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
+
+  if(len < file->files->len_max) {
+    errno = EMSGSIZE;
+    return -1;
+  }
+
   if(fileVide(file)) {
     errno = EAGAIN;
     return -1;
   } else {
-    //on verra après
-    return 0;
+    int response=pthread_mutex_trylock(& file->files->mutex);
+    if(response){
+
+      int size = lire(file->files, msg,len);
+
+      if(size != -1) {
+        majLecture(file,len);
+      }
+
+      pthread_mutex_unlock( & file->files->mutex );
+      pthread_cond_signal( & file->files->wr );
+
+      return size;
+    }
+return -1;
+
   }
+}
+
+
+int msg_disconnect(MESSAGE *file){
+size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
+int m=munmap(file->files, len);
+return m;
+
+
+}
+
+int msg_unlink(const char *nom){
+  int t=shm_unlink(nom);
+  return t;
 }
 
 /*
