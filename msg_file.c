@@ -13,7 +13,7 @@ size_t msg_nb(MESSAGE * file) {
   return file->files->count;
 }
 int filePleine(MESSAGE * file) {
-  return (file->files->first == file->files->last);
+  return ((file->files->first == file->files->last) && (0 < file->files->count));
 }
 
 int fileVide(MESSAGE * file) {
@@ -22,11 +22,9 @@ int fileVide(MESSAGE * file) {
 
 int absVal(int a) {
   if(a < 0)
-    return -a;
+  return -a;
   return a;
 }
-
-
 
 MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
 
@@ -36,11 +34,10 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   printf("%ld\n",nb_msg );
 
   int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
-  if(fd<0)
-   {
-     perror("shm_open");
-   exit(2);
-   }
+  if(fd<0) {
+    perror("shm_open");
+    return NULL;
+  }
 
 
 
@@ -51,60 +48,60 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   struct stat bufStat;
   fstat(fd,&bufStat);
 
-      printf("%ld\n",bufStat.st_size);
+  printf("%ld\n",bufStat.st_size);
 
   void *tab = mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if(tab == MAP_FAILED) {
-         perror("erreur de mmap");
-         exit(1);
-    }
+    perror("erreur de mmap");
+    return NULL;
+  }
 
-//-----------------------------------------------creation entete-------
-    char* nom_1;
-    nom_1=malloc( sizeof(nom));
+  //-----------------------------------------------creation entete-------
+  char* nom_1;
+  nom_1= malloc(sizeof(nom));
 
-    strcpy(nom_1, nom);
+  strcpy(nom_1, nom);
 
-    char* nom_entete=strcat(nom_1,"entete");
+  char* nom_entete=strcat(nom_1,"entete");
 
-    printf("%s\n",nom_entete);
+  printf("%s\n",nom_entete);
 
-    int fdE = shm_open(nom_entete,  options,S_IRUSR | S_IWUSR );
+  int fdE = shm_open(nom_entete,  options,S_IRUSR | S_IWUSR );
 
-    if(fdE<0)
-     {
-       perror("shm_open");
-       exit(2);
-     }
-size_t len1 =sizeof(File_M);
-ftruncate(fdE, len1);
-File_M * tab2 = (File_M *)mmap( 0 , len1 , PROT_READ | PROT_WRITE, MAP_SHARED, fdE, 0);
-if(tab2 == MAP_FAILED) {
-       perror("erreur de mmap");
-       exit(1);
+  if(fdE<0) {
+    perror("shm_open");
+    return NULL;
+  }
+
+  size_t len1 = sizeof(File_M);
+  ftruncate(fdE, len1);
+  File_M * tab2 = (File_M *)mmap( 0 , len1 , PROT_READ | PROT_WRITE, MAP_SHARED, fdE, 0);
+  if(tab2 == MAP_FAILED) {
+    perror("erreur de mmap");
+    return NULL;
   }
   fstat(fdE,&bufStat);
 
-      printf("%ld\n",bufStat.st_size);
+  printf("%ld\n",bufStat.st_size);
 
 
-//initialisation de la file-------------------------------------------------------------------------------------------------------------------------------
+  //initialisation de la file-------------------------------------------------------------------------------------------------------------------------------
 
-tab2->fileMsg=tab;
-tab2->len_max=len_max;
-tab2->nb_msg=nb_msg;
-tab2->first=-1;
-tab2->last=0;
-tab2->count = 0;
-
-
-      MESSAGE* reponse=malloc( sizeof(MESSAGE));
-      reponse->option=options;
-      reponse->files=tab2;
+  tab2->fileMsg=tab;
+  tab2->len_max=len_max;
+  tab2->nb_msg=nb_msg;
+  tab2->first=-1;
+  tab2->last=0;
+  tab2->count = 0;
 
 
-      printf("%d\n",reponse->files->first);
-      return reponse;
+  MESSAGE* reponse=malloc(sizeof(MESSAGE));
+  reponse->option=options;
+  reponse->files=tab2;
+
+
+  printf("%d\n",reponse->files->first);
+  return reponse;
 
 
 }
@@ -115,111 +112,93 @@ MESSAGE* ouverture_file(const char *nom, int options){
 printf("%s\n", "ouverture de file");
   int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
 
-  if(fd<0)
-   {
-     perror("shm_open");
-     exit(2);
-   }
+  if(fd<0) {
+    perror("shm_open");
+    return NULL;
+  }
 
-   struct stat bufStat;
-   fstat(fd,&bufStat);
-   size_t len=bufStat.st_size;
-       printf("%ld\n",bufStat.st_size);
+  struct stat bufStat;
+  fstat(fd,&bufStat);
+  size_t len=bufStat.st_size;
+  printf("%ld\n",bufStat.st_size);
 
 
   void *tab = mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if(tab == MAP_FAILED) {
-         perror("erreur de mmap");
-         exit(1);
+    perror("erreur de mmap");
+    return NULL;
+  }
 
-}
+  //---------------------------------------------------------------------ouverture entete-----------------------------------
+  char* nom_1;
+  nom_1=malloc( sizeof(nom));
 
-//---------------------------------------------------------------------ouverture entete-----------------------------------
-char* nom_1;
-nom_1=malloc( sizeof(nom));
+  strcpy(nom_1, nom);
 
-strcpy(nom_1, nom);
+  char* nom_entete=strcat(nom_1,"entete");
 
-char* nom_entete=strcat(nom_1,"entete");
+  int fdE = shm_open(nom_entete,  options,S_IRUSR | S_IWUSR );
 
-printf("%s\n",nom_entete);
+  if(fdE<0) {
+    perror("shm_open");
+    return NULL;
+  }
 
-int fdE = shm_open(nom_entete,  options,S_IRUSR | S_IWUSR );
+  fstat(fdE,&bufStat);
+  size_t len2=bufStat.st_size;
+  printf("%ld\n",bufStat.st_size);
 
-if(fdE<0)
- {
-   perror("shm_open");
-   exit(2);
- }
+  File_M * tab2 = (File_M *)mmap( 0 , len2 , PROT_READ | PROT_WRITE, MAP_SHARED, fdE, 0);
+  if(tab2 == MAP_FAILED) {
+    perror("erreur de mmap");
+    return NULL;
+  }
 
- fstat(fdE,&bufStat);
- size_t len2=bufStat.st_size;
-     printf("%ld\n",bufStat.st_size);
-
-File_M * tab2 = (File_M *)mmap( 0 , len2 , PROT_READ | PROT_WRITE, MAP_SHARED, fdE, 0);
-if(tab2 == MAP_FAILED) {
-   perror("erreur de mmap");
-   exit(1);
-}
-
-printf("%s\n","ouverturePresque");
-
-tab2->fileMsg=tab;
+  tab2->fileMsg=tab;
 
   MESSAGE* reponse=malloc( sizeof(MESSAGE));
   reponse->option=options;
   reponse->files=tab2;
-printf("%s\n","retour apres ouverture");
-printf("%d\n",tab2->first);
-printf("%d\n",tab2->last);
-  return reponse;
 
+  return reponse;
 }
 
 MESSAGE* creation_file_anonyme(const char *nom, int options, size_t nb_msg, size_t len_max){
 
-printf("%s\n", "creation de file anonyme");
-
-size_t len = nb_msg*(len_max+sizeof(size_t));
+  size_t len = nb_msg*(len_max+sizeof(size_t));
   void* tab = mmap(NULL,len, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
 
   if(tab == MAP_FAILED) {
-       perror("erreur de mmap");
-       exit(1);
+    perror("erreur de mmap");
+    return NULL;
   }
 
+  //------------------------------------------------------------------------------------------------------------------------------
 
-//------------------------------------------------------------------------------------------------------------------------------
+  size_t len1 = sizeof(File_M);
 
-size_t len1 =sizeof(File_M);
-
-File_M * tab2 = (File_M *)mmap( NULL , len1 , PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
-if(tab2 == MAP_FAILED) {
-       perror("erreur de mmap");
-       exit(1);
+  File_M * tab2 = (File_M *)mmap( NULL , len1 , PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON , -1, 0);
+  if(tab2 == MAP_FAILED) {
+    perror("erreur de mmap");
+    return NULL;
   }
 
 
   //initialisation de la file-------------------------------------------------------------------------------------------------------------------------------
 
-  tab2->fileMsg=tab;
-  tab2->len_max=len_max;
-  tab2->nb_msg=nb_msg;
-  tab2->first=-1;
-  tab2->last=0;
+  tab2->fileMsg = tab;
+  tab2->len_max = len_max;
+  tab2->nb_msg = nb_msg;
+  tab2->first = -1;
+  tab2->last = 0;
+  tab2->count = 0;
 
 
-        MESSAGE* reponse=malloc( sizeof(MESSAGE));
-        reponse->option=options;
-        reponse->files=tab2;
+  MESSAGE* reponse=malloc(sizeof(MESSAGE));
+  reponse->option=options;
+  reponse->files=tab2;
 
-
-        printf("%d\n",reponse->files->first);
-        return reponse;
-
-
-
-
+  return reponse;
 }
 
 //----------------------------------88888888888888888888888888888888888888888888888---------------------------------------------------------------------------------------------------------------------
@@ -227,36 +206,27 @@ if(tab2 == MAP_FAILED) {
 MESSAGE *msg_connect( const char *nom, int options,... ){
 
   va_list va;
-   va_start (va, options);
+  va_start (va, options);
 
-if (nom!=NULL) {
-  /* code */
-printf("%d\n",(options & O_CREAT));
-if(!(options & O_CREAT)==0){
-  size_t nb_msg = va_arg (va, size_t);
-  size_t len_max = va_arg (va, size_t);
+  if (nom != NULL) {
+    /* code */
+    
+    if(!(options & O_CREAT)==0){
+      size_t nb_msg = va_arg (va, size_t);
+      size_t len_max = va_arg (va, size_t);
+      creation_file(nom,options,nb_msg,len_max);
+    }else{
+      ouverture_file(nom, options);
+    }
 
-creation_file(nom,options,nb_msg,len_max);
+  } else{
+    size_t nb_msg = va_arg (va, size_t);
+    size_t len_max = va_arg (va, size_t);
+    creation_file_anonyme(nom,options, nb_msg,len_max);
 
-
-
-}else{
-
-ouverture_file(nom, options);
-
+  }
+  va_end (va);
 }
-
-}else{
-  size_t nb_msg = va_arg (va, size_t);
-  size_t len_max = va_arg (va, size_t);
-  creation_file_anonyme(nom,options, nb_msg,len_max);
-
-}
- va_end (va);
-
-
-}
-
 
 
 int ecrire(File_M * files, const void *msg, size_t len) {
@@ -265,14 +235,7 @@ int ecrire(File_M * files, const void *msg, size_t len) {
     int l = files->last;
     memcpy(files->fileMsg+l, &len, sizeof(size_t));
     memcpy(files->fileMsg+l+sizeof(size_t), msg, len+1);
-    printf("%s\n","ecriture");
-   printf("%ld\n", *(size_t *)files->fileMsg);
-
-char *t;
-   memcpy(t, files->fileMsg+l+sizeof(size_t), len+1);
-
-   printf("%s\n", t);
-
+    //  printf("%s\n", files->fileMsg);
     return 0;
   } else {
     printf("%s\n","nn");
@@ -314,20 +277,16 @@ void majLecture(MESSAGE * file, size_t len) {
 
 
 int msg_send(MESSAGE *file, const void *msg, size_t len) {
-printf("%d\n",file->option);
-printf("%d\n",file->files->last);
-printf("%d\n",file->files->first);
 
   pthread_mutex_lock( & file->files->mutex );
-  printf("%s\n","rentre");
-printf("%d\n",filePleine(file));
+
   if(filePleine(file)) {
 
     int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
     if( n!= 0 ){
       pthread_mutex_unlock( & file->files->mutex );
       perror("wait mutex ERROR");
-      return 0;
+      return -1;
     }
   }
 
@@ -344,9 +303,7 @@ printf("%d\n",filePleine(file));
 
   pthread_mutex_unlock( & file->files->mutex );
   pthread_cond_signal( & file->files->rd );
-printf("%s\n","fin");
-printf("%d\n",file->files->first);
-printf("%d\n",file->files->last);
+
   return size;
 }
 
@@ -397,7 +354,7 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
 
 /*
 int main (void) {
-  printf("hello world\n");
-  return 0;
+printf("hello world\n");
+return 0;
 }
 */

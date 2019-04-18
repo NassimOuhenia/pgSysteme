@@ -1,6 +1,4 @@
 CC=gcc
-
-
 LDLIBS=-lrt -pthread
 
 ALL =   msg_file_test clean
