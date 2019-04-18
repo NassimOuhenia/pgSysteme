@@ -17,7 +17,7 @@ int filePleine(MESSAGE * file) {
 }
 
 int fileVide(MESSAGE * file) {
-  return (file->files->first == -1);
+  return (file->files->count == 0);
 }
 
 int absVal(int a) {
@@ -30,6 +30,9 @@ int absVal(int a) {
 
 MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
 
+
+  printf("%s\n", "creation de file normal");
+
   printf("%ld\n",nb_msg );
 
   int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
@@ -41,7 +44,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
 
 
 
-  size_t len = nb_msg*len_max;
+  size_t len = nb_msg*(len_max+sizeof(size_t));
   ftruncate(fd, len);
   printf("%ld\n",len );
 
@@ -92,9 +95,10 @@ tab2->len_max=len_max;
 tab2->nb_msg=nb_msg;
 tab2->first=-1;
 tab2->last=0;
+tab2->count = 0;
 
 
-      MESSAGE* reponse=malloc( sizeof(File_M));
+      MESSAGE* reponse=malloc( sizeof(MESSAGE));
       reponse->option=options;
       reponse->files=tab2;
 
@@ -108,6 +112,7 @@ tab2->last=0;
 
 MESSAGE* ouverture_file(const char *nom, int options){
 
+printf("%s\n", "ouverture de file");
   int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
 
   if(fd<0)
@@ -157,33 +162,32 @@ if(tab2 == MAP_FAILED) {
    exit(1);
 }
 
+printf("%s\n","ouverturePresque");
+
 tab2->fileMsg=tab;
 
-  MESSAGE* reponse=malloc( sizeof(File_M));
+  MESSAGE* reponse=malloc( sizeof(MESSAGE));
   reponse->option=options;
   reponse->files=tab2;
+printf("%s\n","retour apres ouverture");
+printf("%d\n",tab2->first);
+printf("%d\n",tab2->last);
   return reponse;
 
 }
 
 MESSAGE* creation_file_anonyme(const char *nom, int options, size_t nb_msg, size_t len_max){
 
+printf("%s\n", "creation de file anonyme");
 
-
-  size_t len = nb_msg*len_max;
+size_t len = nb_msg*(len_max+sizeof(size_t));
   void* tab = mmap(NULL,len, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
 
   if(tab == MAP_FAILED) {
        perror("erreur de mmap");
        exit(1);
   }
-  int *p = tab;
-  *p = getpid();
-  struct stat bufStat;
-  fstat(*p,&bufStat);
-  printf("%ld\n", bufStat.st_size);
-  printf("%d\n",getpid() );
-  printf("%d\n",*p );
+
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -205,7 +209,7 @@ if(tab2 == MAP_FAILED) {
   tab2->last=0;
 
 
-        MESSAGE* reponse=malloc( sizeof(File_M));
+        MESSAGE* reponse=malloc( sizeof(MESSAGE));
         reponse->option=options;
         reponse->files=tab2;
 
@@ -225,7 +229,7 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
   va_list va;
    va_start (va, options);
 
-if (nom!="NULL") {
+if (nom!=NULL) {
   /* code */
 printf("%d\n",(options & O_CREAT));
 if(!(options & O_CREAT)==0){
@@ -257,13 +261,21 @@ ouverture_file(nom, options);
 
 int ecrire(File_M * files, const void *msg, size_t len) {
 
-  if(len < absVal(files->first - files->last)) {
+  if(len < absVal(files->first - files->last)||files->first==-1) {
     int l = files->last;
     memcpy(files->fileMsg+l, &len, sizeof(size_t));
     memcpy(files->fileMsg+l+sizeof(size_t), msg, len+1);
-  //  printf("%s\n", files->fileMsg);
+    printf("%s\n","ecriture");
+   printf("%ld\n", *(size_t *)files->fileMsg);
+
+char *t;
+   memcpy(t, files->fileMsg+l+sizeof(size_t), len+1);
+
+   printf("%s\n", t);
+
     return 0;
   } else {
+    printf("%s\n","nn");
     return -1;
   }
 }
@@ -302,10 +314,15 @@ void majLecture(MESSAGE * file, size_t len) {
 
 
 int msg_send(MESSAGE *file, const void *msg, size_t len) {
+printf("%d\n",file->option);
+printf("%d\n",file->files->last);
+printf("%d\n",file->files->first);
 
   pthread_mutex_lock( & file->files->mutex );
-
+  printf("%s\n","rentre");
+printf("%d\n",filePleine(file));
   if(filePleine(file)) {
+
     int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
     if( n!= 0 ){
       pthread_mutex_unlock( & file->files->mutex );
@@ -313,10 +330,13 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
       return 0;
     }
   }
+
+//printf("%s\n",(char *)msg);
   int size = ecrire(file->files, msg,len);
 
   if(!size) {
     if(fileVide(file)) {
+      printf("%s\n","filevide");
       file->files->first = 0;
     }
     majEcriture(file,len);
@@ -324,9 +344,13 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
 
   pthread_mutex_unlock( & file->files->mutex );
   pthread_cond_signal( & file->files->rd );
-
+printf("%s\n","fin");
+printf("%d\n",file->files->first);
+printf("%d\n",file->files->last);
   return size;
 }
+
+//-------------------------------------------------------------------------------------------------
 
 int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
   if(filePleine(file)) {

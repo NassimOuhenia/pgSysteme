@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-Wall -std=c11
-CPPFLAGS=-D_POSIX_C_SOURCE=200112L -DNDEBUG
+
+
 LDLIBS=-lrt -pthread
 
 ALL =   msg_file_test clean

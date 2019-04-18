@@ -3,6 +3,18 @@
 
 //nos test
 int main(void) {
-  printf("hello World!\n");
-  return 0;
+  int i=O_RDWR;//|O_CREAT|O_EXCL;
+MESSAGE* mess=msg_connect("mklljjl",i,20,1000);
+printf("%s\n","firrt");
+printf("%d\n",mess->files->first);
+printf("%d\n",mess->files->last);
+
+//int t=msg_send(mess, "moi", 3);
+char * hh;
+//printf("%s\n","apre send");
+//printf("%d\n",mess->files->first);
+
+ssize_t f= msg_receive(mess, hh, 3);
+
+printf("%ld\n",f);
 }
