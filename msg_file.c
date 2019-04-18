@@ -22,7 +22,7 @@ int fileVide(MESSAGE * file) {
 
 int absVal(int a) {
   if(a < 0)
-  return -a;
+    return -a;
   return a;
 }
 
@@ -30,10 +30,9 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
 
 
   printf("%s\n", "creation de file normal");
-
   printf("%ld\n",nb_msg );
 
-  int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
+  int fd = shm_open(nom, options, S_IRUSR | S_IWUSR);
   if(fd<0) {
     perror("shm_open");
     return NULL;
@@ -210,7 +209,7 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
 
   if (nom != NULL) {
     /* code */
-    
+
     if(!(options & O_CREAT)==0){
       size_t nb_msg = va_arg (va, size_t);
       size_t len_max = va_arg (va, size_t);
