@@ -1,7 +1,7 @@
 CC=gcc
 LDLIBS=-lrt -pthread
 
-ALL =   msg_file_test clean
+ALL =   msg_file_test
 
 all : $(ALL)
 

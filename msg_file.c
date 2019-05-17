@@ -12,18 +12,67 @@ size_t msg_capacite(MESSAGE * file) {
 size_t msg_nb(MESSAGE * file) {
   return file->files->count;
 }
-int filePleine(MESSAGE * file) {
-  return ((file->files->first == file->files->last) && (0 < file->files->count));
+
+int filePleine(File_M * files) {
+  return ((files->first == files->last) && (0 < files->count));
 }
 
-int fileVide(MESSAGE * file) {
-  return (file->files->count == 0);
+int fileVide(File_M * files) {
+  return (files->count == 0);
 }
 
 int absVal(int a) {
   if(a < 0)
-    return -a;
+  return -a;
   return a;
+}
+
+void init_mutex(File_M *file) {
+  if(pthread_mutexattr_init(&(file->send)) != 0) {
+    fprintf(stderr, "pthread_mutexattr_init\n");
+    exit(1);
+  }
+
+  if(pthread_mutexattr_setpshared(&file->send, PTHREAD_PROCESS_SHARED) != 0) {
+    fprintf(stderr, "pthread_mutexattr_setpshared\n");
+    exit(1);
+  }
+
+  if(pthread_mutex_init(&(file->mutex), &file->send) != 0) {
+    fprintf(stderr, "pthread_mutex_init\n");
+    exit(1);
+  }
+
+
+  if(pthread_condattr_init(&file->c_rd) != 0) {
+    fprintf(stderr, "pthread_condattr_init\n");
+    exit(1);
+  }
+
+  if(pthread_condattr_setpshared(&file->c_rd, PTHREAD_PROCESS_SHARED) != 0) {
+    fprintf(stderr, "pthread_mutexattr_setpshared\n");
+    exit(1);
+  }
+
+  if(pthread_cond_init(&(file->rd), &file->c_rd) != 0) {
+    fprintf(stderr, "pthread_cond_init\n");
+    exit(1);
+  }
+
+  if(pthread_condattr_init(&file->c_wr) != 0) {
+    fprintf(stderr, "pthread_condattr_init\n");
+    exit(1);
+  }
+
+  if(pthread_condattr_setpshared(&file->c_wr, PTHREAD_PROCESS_SHARED) != 0) {
+    fprintf(stderr, "pthread_mutexattr_setpshared\n");
+    exit(1);
+  }
+
+  if(pthread_cond_init(&(file->wr), &file->c_wr) != 0) {
+    fprintf(stderr, "pthread_cond_init\n");
+    exit(1);
+  }
 }
 
 MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
@@ -64,6 +113,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   tab->last = 0;
   tab->count = 0;
 
+  init_mutex(tab);
 
   MESSAGE* reponse=malloc(sizeof(MESSAGE));
   reponse->option = options;
@@ -129,6 +179,7 @@ MESSAGE* creation_file_anonyme(const char *nom, int options, size_t nb_msg, size
   tab->last = 0;
   tab->count = 0;
 
+  init_mutex(tab);
 
   MESSAGE* reponse = malloc(sizeof(MESSAGE));
   reponse->option = options;
@@ -145,7 +196,6 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
   va_start (va, options);
 
   if (nom != NULL) {
-    /* code */
 
     if(!(options & O_CREAT)==0){
       size_t nb_msg = va_arg (va, size_t);
@@ -165,202 +215,142 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
 }
 
 
-int ecrire(File_M * files, const void *msg, size_t len) {
+int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
 
+  if(len < absVal(files->first - indexEcrire) || fileVide(files)) {
 
-  if(len < absVal(files->first - files->last)||files->first==-1) {
-    int l = files->last;
-    memcpy(files->fileMsg+l, &len, sizeof(size_t));
-    memcpy(files->fileMsg+l+sizeof(size_t), msg, len+1);
+    memcpy(files->fileMsg+indexEcrire, &len, sizeof(size_t));
+    memcpy(files->fileMsg+indexEcrire+sizeof(size_t), msg, len+1);
     //  printf("%s\n", files->fileMsg);
     return 0;
   } else {
-    printf("%s\n","nn");
+    perror("ecrire");
     return -1;
   }
 }
 
-void majEcriture(MESSAGE * file, size_t len) {
-
+int majEcriture(MESSAGE * file, size_t len) {
+  int old =   file->files->last;
   file->files->count++;
   file->files->last = (file->files->last+len+sizeof(size_t))%msg_capacite(file);
-
+  return old;
 }
 
-int lire(File_M * files, void *msg, size_t len) {
+int lire(File_M * files, void *msg, size_t len, int indexLire) {
 
   size_t lenMsg;
-  int fst = files->first;
+  memcpy(&lenMsg, files->fileMsg+indexLire, sizeof(size_t));
 
-  memcpy(&lenMsg, files->fileMsg+fst, sizeof(size_t));
+  if(len < lenMsg) {
+    errno = EMSGSIZE;
+    perror("lire");
+    return -1;
+  }
 
-
-  memcpy(msg, files->fileMsg+fst+sizeof(size_t), lenMsg);
-
+  memcpy(msg, files->fileMsg+indexLire+sizeof(size_t), lenMsg);
   return lenMsg;
 
 }
 
-void majLecture(MESSAGE * file, size_t len) {
-
+int majLecture(MESSAGE * file, size_t len) {
+  int old = file->files->first;
   file->files->count--;
   file->files->first = (file->files->first+len+sizeof(size_t))%msg_capacite(file);
-
+  return old;
 }
 
 
 int msg_send(MESSAGE *file, const void *msg, size_t len) {
 
-  if(len > file->files->len_max) {
-    errno = EMSGSIZE;
-    return -1;
-  }
-
   pthread_mutex_lock( & file->files->mutex );
 
-  if(filePleine(file)) {
-
+  while(filePleine(file->files)) {
     int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
-    if( n!= 0 ){
-      pthread_mutex_unlock( & file->files->mutex );
-      perror("wait mutex ERROR");
-      return -1;
-    }
   }
 
-//printf("%s\n",(char *)msg);
-  int size = ecrire(file->files, msg,len);
+  int indexEcrire = majEcriture(file,len);
+  pthread_mutex_unlock( & file->files->mutex );
+
+  int size = ecrire(file->files, msg, len, indexEcrire);
+  pthread_cond_broadcast( & file->files->rd );
 
   if(!size) {
-    if(fileVide(file)) {
-      printf("%s\n","filevide");
+    if(file->files->first == -1) {
       file->files->first = 0;
     }
-    majEcriture(file,len);
   }
-
-  pthread_mutex_unlock( & file->files->mutex );
-  pthread_cond_signal( & file->files->rd );
 
   return size;
 }
 
-//-------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
 
 int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
-  if(len > file->files->len_max) {
-      printf("%s\n","filevide");
-    errno = EMSGSIZE;
+  if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
+    perror("can't block");
     return -1;
   }
 
-  if(filePleine(file)) {
-      printf("%s\n","filevide2");
+  if(filePleine(file->files)) {
+    pthread_mutex_unlock( & file->files->mutex );
+
     errno = EAGAIN;
-
+    perror("try_send");
     return -1;
+  }
 
-  } else {
+  int indexEcrire = majEcriture(file,len);
+  pthread_mutex_unlock( & file->files->mutex );
 
-int response=pthread_mutex_trylock(& file->files->mutex);
-  printf("%s\n","filevide55");
-    printf("%d\n",response);
-if(response==0){
-    printf("%s\n","ecriture-------------------");
-
-  int size = ecrire(file->files, msg,len);
+  int size = ecrire(file->files, msg, len, indexEcrire);
 
   if(!size) {
-    if(fileVide(file)) {
-      printf("%s\n","filevide");
+    if(file->files->first == -1) {
       file->files->first = 0;
     }
-    majEcriture(file,len);
   }
 
-  pthread_mutex_unlock( & file->files->mutex );
-  pthread_cond_signal( & file->files->rd );
-    return 0;
-
+  pthread_cond_broadcast( & file->files->rd );
+  return size;
 }
 
-    ////on verra après
-    return -1;
-  }
-}
 
 ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
-
-  if(len < file->files->len_max) {
-    errno = EMSGSIZE;
-    return -1;
-  }
-
   pthread_mutex_lock( & file->files->mutex );
-  if(fileVide(file)) {
+  while(fileVide(file->files)) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutex );
-    if( n!= 0 ){
-      pthread_mutex_unlock( & file->files->mutex );
-      perror("wait mutex ERROR");
-      return 0;
-    }
   }
 
-  int size = lire(file->files, msg,len);
-
-  if(size != -1) {
-    majLecture(file,len);
-  }
+  int indexLire = majLecture(file,len);
 
   pthread_mutex_unlock( & file->files->mutex );
-  pthread_cond_signal( & file->files->wr );
+  int size = lire(file->files, msg, len, indexLire);
+  pthread_cond_broadcast( & file->files->wr );
 
   return size;
 }
 
 ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
 
-  if(len < file->files->len_max) {
-    errno = EMSGSIZE;
+  if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
+    perror("can't block");
     return -1;
   }
-
-  if(fileVide(file)) {
+  if(fileVide(file->files)) {
+    pthread_mutex_unlock( & file->files->mutex );
     errno = EAGAIN;
+    perror("try_receive");
     return -1;
-  } else {
-    int response=pthread_mutex_trylock(& file->files->mutex);
-    if(response){
-
-      int size = lire(file->files, msg,len);
-
-      if(size != -1) {
-        majLecture(file,len);
-      }
-
-      pthread_mutex_unlock( & file->files->mutex );
-      pthread_cond_signal( & file->files->wr );
-
-      return size;
-    }
-return -1;
-
   }
-}
 
+  int indexLire = majLecture(file,len);
+  pthread_mutex_unlock( & file->files->mutex );
 
-int msg_disconnect(MESSAGE *file){
-size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
-int m=munmap(file->files, len);
-return m;
+  int size = lire(file->files, msg, len, indexLire);
+  pthread_cond_broadcast( & file->files->wr );
 
-
-}
-
-int msg_unlink(const char *nom){
-  int t=shm_unlink(nom);
-  return t;
+  return size;
 }
 
 /*
