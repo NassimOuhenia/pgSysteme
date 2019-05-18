@@ -353,6 +353,18 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
   return size;
 }
 
+int msg_disconnect(MESSAGE *file){
+size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
+int m=munmap(file->files, len);
+return m;
+
+
+}
+
+int msg_unlink(const char *nom){
+  int t=shm_unlink(nom);
+  return t;
+}
 /*
 int main (void) {
 printf("hello world\n");
