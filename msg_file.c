@@ -28,7 +28,74 @@ int absVal(int a) {
 }
 
 void init_mutex(File_M *file) {
-  if(pthread_mutexattr_init(&(file->send)) != 0) {
+
+  pthread_mutexattr_t attr;
+   pthread_condattr_t cattr;
+
+     if(pthread_mutexattr_init(&attr) != 0) {
+          fprintf(stderr, "pthread_mutexattr_init\n");
+          exit(1);
+     }
+
+     if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED) != 0) {
+          fprintf(stderr, "pthread_mutexattr_setpshared\n");
+          exit(1);
+     }
+
+     if(pthread_mutex_init(&(file->mutex), &attr) != 0) {
+          fprintf(stderr, "pthread_mutex_init\n");
+          exit(1);
+     }
+
+     if(pthread_mutexattr_init(&attr) != 0) {
+          fprintf(stderr, "pthread_mutexattr_init\n");
+          exit(1);
+     }
+
+     if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED) != 0) {
+          fprintf(stderr, "pthread_mutexattr_setpshared\n");
+          exit(1);
+     }
+
+     if(pthread_mutex_init(&(file->mutexLec), &attr) != 0) {
+          fprintf(stderr, "pthread_mutex_init\n");
+          exit(1);
+     }
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------condition------
+     if(pthread_condattr_init(&cattr) != 0) {
+          fprintf(stderr, "pthread_condattr_init\n");
+          exit(1);
+     }
+
+     if(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED) != 0) {
+          fprintf(stderr, "pthread_mutexattr_setpshared\n");
+          exit(1);
+     }
+
+     if(pthread_cond_init(&(file->wr), &cattr) != 0) {
+          fprintf(stderr, "pthread_cond_init\n");
+          exit(1);
+     }
+
+     if(pthread_condattr_init(&cattr) != 0) {
+          fprintf(stderr, "pthread_condattr_init\n");
+          exit(1);
+     }
+
+     if(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED) != 0) {
+          fprintf(stderr, "pthread_mutexattr_setpshared\n");
+          exit(1);
+     }
+
+     if(pthread_cond_init(&(file->rd), &cattr) != 0) {
+          fprintf(stderr, "pthread_cond_init\n");
+          exit(1);
+     }
+
+
+
+  /*if(pthread_mutexattr_init(&(file->send)) != 0) {
     fprintf(stderr, "pthread_mutexattr_init\n");
     exit(1);
   }
@@ -73,6 +140,7 @@ void init_mutex(File_M *file) {
     fprintf(stderr, "pthread_cond_init\n");
     exit(1);
   }
+  */
 }
 
 MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
@@ -120,7 +188,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   reponse->files = tab;
 
 
-  printf("%d\n",reponse->files->first);
+printf("creation de file CAPACITE %ld\n", msg_capacite(reponse));
   return reponse;
 
 
@@ -217,19 +285,30 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
 
 int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
 
-  if(len < absVal(files->first - indexEcrire) || fileVide(files)) {
+//  if(len < absVal(files->first - indexEcrire) || fileVide(files)) {
 
     memcpy(files->fileMsg+indexEcrire, &len, sizeof(size_t));
     memcpy(files->fileMsg+indexEcrire+sizeof(size_t), msg, len+1);
     //  printf("%s\n", files->fileMsg);
     return 0;
-  } else {
+/*  } else {
     perror("ecrire");
     return -1;
+  }*/
+}
+size_t calculeEspaceWrite(MESSAGE * file){
+  size_t espace=file->files->first-file->files->last;
+  if (espace<0) {
+    return espace+msg_capacite(file);
+
+  }else{
+    return espace;
   }
 }
 
 int majEcriture(MESSAGE * file, size_t len) {
+
+
   int old =   file->files->last;
   file->files->count++;
   file->files->last = (file->files->last+len+sizeof(size_t))%msg_capacite(file);
@@ -262,9 +341,15 @@ int majLecture(MESSAGE * file, size_t len) {
 
 int msg_send(MESSAGE *file, const void *msg, size_t len) {
 
+  if(len>file->files->len_max){
+    printf("message trop grand pour ecriture\n" );
+    return -1;
+  }
+
   pthread_mutex_lock( & file->files->mutex );
 
-  while(filePleine(file->files)) {
+  while(filePleine(file->files)||len>calculeEspaceWrite(file)) {
+    printf("processus %d en attente\n", (int) getpid());
     int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
   }
 
@@ -272,6 +357,7 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   pthread_mutex_unlock( & file->files->mutex );
 
   int size = ecrire(file->files, msg, len, indexEcrire);
+
   pthread_cond_broadcast( & file->files->rd );
 
   if(!size) {
@@ -317,14 +403,14 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
 
 ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
-  pthread_mutex_lock( & file->files->mutex );
+  pthread_mutex_lock( & file->files->mutexLec );
   while(fileVide(file->files)) {
-    int n = pthread_cond_wait( & file->files->rd ,& file->files->mutex );
+    int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
   }
 
   int indexLire = majLecture(file,len);
 
-  pthread_mutex_unlock( & file->files->mutex );
+  pthread_mutex_unlock( & file->files->mutexLec );
   int size = lire(file->files, msg, len, indexLire);
   pthread_cond_broadcast( & file->files->wr );
 
