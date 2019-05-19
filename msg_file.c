@@ -92,56 +92,10 @@ void init_mutex(File_M *file) {
           fprintf(stderr, "pthread_cond_init\n");
           exit(1);
      }
-
-
-
-  /*if(pthread_mutexattr_init(&(file->send)) != 0) {
-    fprintf(stderr, "pthread_mutexattr_init\n");
-    exit(1);
-  }
-
-  if(pthread_mutexattr_setpshared(&file->send, PTHREAD_PROCESS_SHARED) != 0) {
-    fprintf(stderr, "pthread_mutexattr_setpshared\n");
-    exit(1);
-  }
-
-  if(pthread_mutex_init(&(file->mutex), &file->send) != 0) {
-    fprintf(stderr, "pthread_mutex_init\n");
-    exit(1);
-  }
-
-
-  if(pthread_condattr_init(&file->c_rd) != 0) {
-    fprintf(stderr, "pthread_condattr_init\n");
-    exit(1);
-  }
-
-  if(pthread_condattr_setpshared(&file->c_rd, PTHREAD_PROCESS_SHARED) != 0) {
-    fprintf(stderr, "pthread_mutexattr_setpshared\n");
-    exit(1);
-  }
-
-  if(pthread_cond_init(&(file->rd), &file->c_rd) != 0) {
-    fprintf(stderr, "pthread_cond_init\n");
-    exit(1);
-  }
-
-  if(pthread_condattr_init(&file->c_wr) != 0) {
-    fprintf(stderr, "pthread_condattr_init\n");
-    exit(1);
-  }
-
-  if(pthread_condattr_setpshared(&file->c_wr, PTHREAD_PROCESS_SHARED) != 0) {
-    fprintf(stderr, "pthread_mutexattr_setpshared\n");
-    exit(1);
-  }
-
-  if(pthread_cond_init(&(file->wr), &file->c_wr) != 0) {
-    fprintf(stderr, "pthread_cond_init\n");
-    exit(1);
-  }
-  */
 }
+
+
+//**********************************************************************************************8pour la connection*******************************************************************
 
 MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
 
@@ -282,7 +236,7 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
   va_end (va);
 }
 
-
+//**********************************************************************************************************************fin connection****************************************************
 int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
 
 //  if(len < absVal(files->first - indexEcrire) || fileVide(files)) {
@@ -338,7 +292,7 @@ int majLecture(MESSAGE * file, size_t len) {
   return old;
 }
 
-
+//*****************************************************************************send*********************************************************************************
 int msg_send(MESSAGE *file, const void *msg, size_t len) {
 
   if(len>file->files->len_max){
@@ -401,8 +355,14 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
   return size;
 }
 
-
+//*****************************************************************************************************88receive****************************************************************************
 ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
+
+  if(len!=file->files->len_max){
+    printf("taille message a lire incorrect\n" );
+    return -1;
+  }
+
   pthread_mutex_lock( & file->files->mutexLec );
   while(fileVide(file->files)) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
@@ -411,8 +371,9 @@ ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
   int indexLire = majLecture(file,len);
 
   pthread_mutex_unlock( & file->files->mutexLec );
+    pthread_cond_broadcast( & file->files->wr );
   int size = lire(file->files, msg, len, indexLire);
-  pthread_cond_broadcast( & file->files->wr );
+
 
   return size;
 }
@@ -438,7 +399,7 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
 
   return size;
 }
-
+//****************************************************************************************************************************88fin receive********************************************
 int msg_disconnect(MESSAGE *file){
 size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
 int m=munmap(file->files, len);

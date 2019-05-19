@@ -52,7 +52,7 @@ int main(void) {
 
 
      int i=O_RDWR|O_CREAT| O_EXCL;
-     MESSAGE* mess=msg_connect("mo",i,3,10);
+     MESSAGE* mess=msg_connect("d",i,4,10);
 
      if(mess == NULL) {
        perror("erreur de connexion");
@@ -83,23 +83,38 @@ int main(void) {
 
                printf(" FILS %d\n",pid_fils );
                          int i=O_RDWR ;
-                         MESSAGE* mess=msg_connect("mo",i);
+                         MESSAGE* mess=msg_connect("d",i);
 
                          if(mess == NULL) {
                            perror("erreur de connexion");
                            return 0;
                          }
+                            srandom(pid_fils);
+const int   randtime = rand() % 2;
+printf("voilaaa %d\n", randtime);
 
-                         printf("Connection du fils %d\n",pid_fils);
+if(randtime==1){
+  printf("Connection du fils %d pour une lecture first = %d last = %d \n",pid_fils,mess->files->first,mess->files->last);
 
-                         printf("Fils %d first = %d\n",pid_fils,mess->files->first);
-                         printf("Fils %d last = %d\n",pid_fils,mess->files->last);
+  char* receivBuf=malloc(sizeof(char)*10);
+
+  int t=msg_receive(mess, receivBuf, 10);
+  char * hh;
+  printf("Apres Connection du fils %d pour une lecture first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
+
+  msg_disconnect(mess);
+
+
+exit(0);
+
+}
+
+                         printf("Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
                          int t=msg_send(mess, "moi", 10);
                          char * hh;
+printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
-                         printf("apre send Fils %d first = %d\n",pid_fils,mess->files->first);
-                         printf("apre send Fils %d last = %d\n",pid_fils,mess->files->last);
                          msg_disconnect(mess);
 
 
@@ -107,6 +122,7 @@ int main(void) {
           } else {
                printf("processus père: création du processus fils %d/4 %d ok\n", i+1, pids[i]);
           }
+
      }
 
      /* Le père attend la mort des fils */
@@ -116,7 +132,7 @@ int main(void) {
      }
 
      printf("moiiiisis\n");
-      msg_unlink("mo");
+      msg_unlink("d");
 
      exit(0);
 }}
