@@ -102,7 +102,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
 
 
   printf("%s\n", "creation de file normal");
-  printf("%ld\n",nb_msg );
+
 
   int fd = shm_open(nom, options, S_IRUSR | S_IWUSR);
   if(fd<0) {
@@ -115,12 +115,12 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   size_t len = nb_msg*(len_max+sizeof(size_t)) + sizeof(File_M);
 
   ftruncate(fd, len);
-  printf("%ld\n",len );
+
 
   struct stat bufStat;
   fstat(fd,&bufStat);
 
-  printf("%ld\n",bufStat.st_size);
+//  printf("%ld\n",bufStat.st_size);
 
   File_M *tab = (File_M *) mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if(tab == MAP_FAILED) {
@@ -163,7 +163,7 @@ MESSAGE* ouverture_file(const char *nom, int options){
   struct stat bufStat;
   fstat(fd, &bufStat);
   size_t len = bufStat.st_size;
-  printf("%ld\n",bufStat.st_size);
+//  printf("%ld\n",bufStat.st_size);
 
 
   File_M *tab = (File_M *) mmap(0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -258,7 +258,7 @@ size_t calculeEspaceWrite(MESSAGE * file){
     return msg_capacite(file)+espace;
 
   }else if(espace>0){
-    
+
     return espace;
   }else  if(espace==0){
     if (filePleine(file->files)) {
@@ -285,6 +285,8 @@ int lire(File_M * files, void *msg, size_t len, int indexLire) {
   size_t lenMsg;
   memcpy(&lenMsg, files->fileMsg+indexLire, sizeof(size_t));
 
+  printf("%ld la longeur du message lu\n",lenMsg);
+
   if(len < lenMsg) {
     errno = EMSGSIZE;
     perror("lire");
@@ -292,14 +294,19 @@ int lire(File_M * files, void *msg, size_t len, int indexLire) {
   }
 
   memcpy(msg, files->fileMsg+indexLire+sizeof(size_t), lenMsg);
+    printf("%s la longeur du message lu\n",(char*)msg);
   return lenMsg;
 
 }
 
 int majLecture(MESSAGE * file, size_t len) {
+
+  size_t lenMsg;
+  memcpy(&lenMsg, file->files->fileMsg+file->files->first, sizeof(size_t));
+
   int old = file->files->first;
   file->files->count--;
-  file->files->first = (file->files->first+len+sizeof(size_t))%msg_capacite(file);
+  file->files->first = (file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file);
   return old;
 }
 

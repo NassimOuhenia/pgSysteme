@@ -60,7 +60,7 @@ if (pidlire==-1) {
 
                       printf("Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
-                      int t=msg_send(mess, "moi", 10);
+                      int t=msg_send(mess, "moi", 22);
                       char * hh;
 printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
