@@ -321,7 +321,7 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   pthread_mutex_lock( & file->files->mutex );
   printf("%d lenght %ld\n",filePleine(file->files), calculeEspaceWrite(file));
 
-  while(filePleine(file->files)||len>calculeEspaceWrite(file)) {
+  while(filePleine(file->files)||len+sizeof(size_t)>calculeEspaceWrite(file)) {
     printf("processus %d en attente\n", (int) getpid());
     int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
   }

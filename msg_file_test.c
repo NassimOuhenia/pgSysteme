@@ -11,11 +11,11 @@
 
 int main(void) {
 
-  pid_t pids[5];
+  pid_t pids[7];
 
 
   int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("skk",i,4,10);
+  MESSAGE* mess=msg_connect("o",i,4,10);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -32,14 +32,14 @@ if (pidlire==-1) {
   printf("Connection du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-  int t=msg_receive(mess, receivBuf, 10);
+  int t=msg_receive(mess, receivBuf, 100);
 
     printf("Apres Connection  du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
     exit(0);
 }
 
 
-  for(int i = 0; i < 5; i++) {
+  for(int i = 0; i < 7; i++) {
        pids[i] = fork();
 
        if(pids[i] == -1) {
@@ -50,7 +50,7 @@ if (pidlire==-1) {
             const pid_t pid_fils = getpid();
             printf(" FILS %d\n",pid_fils );
                       int i=O_RDWR ;
-                      MESSAGE* mess=msg_connect("skk",i);
+                      MESSAGE* mess=msg_connect("o",i);
 
                       if(mess == NULL) {
                         perror("erreur de connexion");
@@ -60,7 +60,7 @@ if (pidlire==-1) {
 
                       printf("Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
-                      int t=msg_send(mess, "moi", 22);
+                      int t=msg_send(mess, "moi", 3);
                       char * hh;
 printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
@@ -75,7 +75,7 @@ printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",p
   }
 
   /* Le père attend la mort des fils */
-  for(int i = 0; i < 5; i++) {
+  for(int i = 0; i < 7; i++) {
        waitpid(pids[i], NULL, 0);
        printf("-------------------------processus père: fils %d mort\n", pids[i]);
   }
@@ -90,7 +90,7 @@ printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",p
 
 
   printf("moiiiisis\n");
-   msg_unlink("skk");
+   msg_unlink("o");
    exit(0);
 }
 
