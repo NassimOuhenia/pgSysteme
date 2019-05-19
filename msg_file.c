@@ -14,7 +14,8 @@ size_t msg_nb(MESSAGE * file) {
 }
 
 int filePleine(File_M * files) {
-  return ((files->first == files->last) && (0 < files->count));
+
+  return ((files->first == files->last) && ( files->count>0));
 }
 
 int fileVide(File_M * files) {
@@ -251,12 +252,22 @@ int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
   }*/
 }
 size_t calculeEspaceWrite(MESSAGE * file){
-  size_t espace=file->files->first-file->files->last;
+  int espace=file->files->first-file->files->last;
   if (espace<0) {
-    return espace+msg_capacite(file);
 
-  }else{
+    return msg_capacite(file)+espace;
+
+  }else if(espace>0){
+    
     return espace;
+  }else  if(espace==0){
+    if (filePleine(file->files)) {
+
+      return 0;
+    }else{
+
+      return msg_capacite(file);
+    }
   }
 }
 
@@ -301,6 +312,7 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   }
 
   pthread_mutex_lock( & file->files->mutex );
+  printf("%d lenght %ld\n",filePleine(file->files), calculeEspaceWrite(file));
 
   while(filePleine(file->files)||len>calculeEspaceWrite(file)) {
     printf("processus %d en attente\n", (int) getpid());
@@ -404,6 +416,7 @@ int msg_disconnect(MESSAGE *file){
 size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
 int m=munmap(file->files, len);
 return m;
+
 
 
 }
