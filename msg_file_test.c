@@ -15,7 +15,7 @@ int main(void) {
 
 
   int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("o",i,4,10);
+  MESSAGE* mess=msg_connect("pp",i,4,10);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -32,7 +32,7 @@ if (pidlire==-1) {
   printf("Connection du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-  int t=msg_receive(mess, receivBuf, 100);
+  int t=msg_receive(mess, receivBuf, 10);
 
     printf("Apres Connection  du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
     exit(0);
@@ -50,7 +50,7 @@ if (pidlire==-1) {
             const pid_t pid_fils = getpid();
             printf(" FILS %d\n",pid_fils );
                       int i=O_RDWR ;
-                      MESSAGE* mess=msg_connect("o",i);
+                      MESSAGE* mess=msg_connect("pp",i);
 
                       if(mess == NULL) {
                         perror("erreur de connexion");
@@ -90,7 +90,7 @@ printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",p
 
 
   printf("moiiiisis\n");
-   msg_unlink("o");
+   msg_unlink("pp");
    exit(0);
 }
 

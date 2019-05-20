@@ -243,7 +243,7 @@ int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
 //  if(len < absVal(files->first - indexEcrire) || fileVide(files)) {
 
     memcpy(files->fileMsg+indexEcrire, &len, sizeof(size_t));
-    memcpy(files->fileMsg+indexEcrire+sizeof(size_t), msg, len+1);
+    memcpy(files->fileMsg+indexEcrire+sizeof(size_t), msg, len);
     //  printf("%s\n", files->fileMsg);
     return 0;
 /*  } else {
@@ -319,7 +319,12 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   }
 
   pthread_mutex_lock( & file->files->mutex );
-  printf("%d lenght %ld\n",filePleine(file->files), calculeEspaceWrite(file));
+  printf("%d lenght %ld capacite restante %ld\n",filePleine(file->files), calculeEspaceWrite(file),msg_capacite(file)-file->files->last);
+
+  int val=len+sizeof(size_t)<=calculeEspaceWrite(file) && (msg_capacite(file)-file->files->last)<sizeof(size_t);
+  if(val){
+    file->files->last=0;
+  }
 
   while(filePleine(file->files)||len+sizeof(size_t)>calculeEspaceWrite(file)) {
     printf("processus %d en attente\n", (int) getpid());
