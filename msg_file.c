@@ -238,12 +238,20 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
 }
 
 //**********************************************************************************************************************fin connection****************************************************
-int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
+int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire,size_t capacite,size_t capaciteFile) {
 
 //  if(len < absVal(files->first - indexEcrire) || fileVide(files)) {
 
-    memcpy(files->fileMsg+indexEcrire, &len, sizeof(size_t));
-    memcpy(files->fileMsg+indexEcrire+sizeof(size_t), msg, len);
+    memcpy((files->fileMsg+indexEcrire), &len, sizeof(size_t));
+    capacite=capacite-sizeof(size_t);
+    printf(" apres ecriture de la taille on a ---------------------------%ld\n",indexEcrire+sizeof(size_t) );
+    memcpy((files->fileMsg+indexEcrire+sizeof(size_t)), msg, capacite);
+    printf(" apres ecriture de la taille on a ---------------------------%s\n",(files->fileMsg+60));
+    if (capacite<len) {
+      int indice=(indexEcrire+sizeof(size_t)+capacite)%capaciteFile;
+          memcpy(files->fileMsg+indice, msg+capacite, len-capacite);
+          printf("Lautre moitier---------------------------%s\n",(files->fileMsg+0));
+    }
     //  printf("%s\n", files->fileMsg);
     return 0;
 /*  } else {
@@ -320,7 +328,7 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
 
   pthread_mutex_lock( & file->files->mutex );
   printf("%d lenght %ld capacite restante %ld\n",filePleine(file->files), calculeEspaceWrite(file),msg_capacite(file)-file->files->last);
-
+size_t capaciteAvant=msg_capacite(file)-file->files->last;
   int val=len+sizeof(size_t)<=calculeEspaceWrite(file) && (msg_capacite(file)-file->files->last)<sizeof(size_t);
   if(val){
     file->files->last=0;
@@ -334,7 +342,7 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   int indexEcrire = majEcriture(file,len);
   pthread_mutex_unlock( & file->files->mutex );
 
-  int size = ecrire(file->files, msg, len, indexEcrire);
+  int size = ecrire(file->files, msg, len, indexEcrire,capaciteAvant,msg_capacite(file));
 
   pthread_cond_broadcast( & file->files->rd );
 
@@ -348,7 +356,7 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
 }
 
 //-------------------------------------------------------------------------------------------------
-
+/*
 int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
   if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
@@ -377,7 +385,7 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
   pthread_cond_broadcast( & file->files->rd );
   return size;
-}
+}*/
 
 //*****************************************************************************************************88receive****************************************************************************
 ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {

@@ -15,7 +15,7 @@ int main(void) {
 
 
   int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("pp",i,4,10);
+  MESSAGE* mess=msg_connect("hw",i,4,8);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -32,7 +32,7 @@ if (pidlire==-1) {
   printf("Connection du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-  int t=msg_receive(mess, receivBuf, 10);
+  int t=msg_receive(mess, receivBuf, 8);
 
     printf("Apres Connection  du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
     exit(0);
@@ -50,7 +50,7 @@ if (pidlire==-1) {
             const pid_t pid_fils = getpid();
             printf(" FILS %d\n",pid_fils );
                       int i=O_RDWR ;
-                      MESSAGE* mess=msg_connect("pp",i);
+                      MESSAGE* mess=msg_connect("hw",i);
 
                       if(mess == NULL) {
                         perror("erreur de connexion");
@@ -60,7 +60,7 @@ if (pidlire==-1) {
 
                       printf("Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
-                      int t=msg_send(mess, "moi", 3);
+                      int t=msg_send(mess, "moiii", 5);
                       char * hh;
 printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
 
@@ -78,19 +78,26 @@ printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",p
   for(int i = 0; i < 7; i++) {
        waitpid(pids[i], NULL, 0);
        printf("-------------------------processus père: fils %d mort\n", pids[i]);
+       printf("Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
+       if (pids[i]=pids[5]) {
+         /* code */
+           char* receivBuf=malloc(sizeof(char)*10);
+            int t=msg_receive(mess, receivBuf, 8);
+       }
+         printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
   }
 
   printf("Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-   int t=msg_receive(mess, receivBuf, 10);
+   int t=msg_receive(mess, receivBuf, 8);
 
     printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
 
 
 
   printf("moiiiisis\n");
-   msg_unlink("pp");
+   msg_unlink("hw");
    exit(0);
 }
 
