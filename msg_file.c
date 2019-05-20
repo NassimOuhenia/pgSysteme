@@ -120,8 +120,6 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   struct stat bufStat;
   fstat(fd,&bufStat);
 
-//  printf("%ld\n",bufStat.st_size);
-
   File_M *tab = (File_M *) mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if(tab == MAP_FAILED) {
     perror("erreur de mmap");
@@ -163,8 +161,6 @@ MESSAGE* ouverture_file(const char *nom, int options){
   struct stat bufStat;
   fstat(fd, &bufStat);
   size_t len = bufStat.st_size;
-//  printf("%ld\n",bufStat.st_size);
-
 
   File_M *tab = (File_M *) mmap(0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
@@ -172,8 +168,6 @@ MESSAGE* ouverture_file(const char *nom, int options){
     perror("erreur de mmap");
     return NULL;
   }
-
-
 
   MESSAGE* reponse = malloc( sizeof(MESSAGE));
   reponse->option = options;
@@ -254,33 +248,25 @@ int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire,size_t c
     }
     //  printf("%s\n", files->fileMsg);
     return 0;
-/*  } else {
-    perror("ecrire");
-    return -1;
-  }*/
 }
+
 size_t calculeEspaceWrite(MESSAGE * file){
   int espace=file->files->first-file->files->last;
   if (espace<0) {
-
     return msg_capacite(file)+espace;
 
-  }else if(espace>0){
-
+  } else if(espace>0) {
     return espace;
-  }else  if(espace==0){
+  } else if(espace==0) {
     if (filePleine(file->files)) {
-
       return 0;
-    }else{
-
+    } else {
       return msg_capacite(file);
     }
   }
 }
 
 int majEcriture(MESSAGE * file, size_t len) {
-
 
   int old =   file->files->last;
   file->files->count++;
@@ -345,13 +331,6 @@ size_t capaciteAvant=msg_capacite(file)-file->files->last;
   int size = ecrire(file->files, msg, len, indexEcrire,capaciteAvant,msg_capacite(file));
 
   pthread_cond_broadcast( & file->files->rd );
-
-  if(!size) {
-    if(file->files->first == -1) {
-      file->files->first = 0;
-    }
-  }
-
   return size;
 }
 
@@ -377,12 +356,6 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
   int size = ecrire(file->files, msg, len, indexEcrire);
 
-  if(!size) {
-    if(file->files->first == -1) {
-      file->files->first = 0;
-    }
-  }
-
   pthread_cond_broadcast( & file->files->rd );
   return size;
 }*/
@@ -400,7 +373,7 @@ ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
   }
 
-  int indexLire = majLecture(file,len);
+  size_t lenMsg;
 
   pthread_mutex_unlock( & file->files->mutexLec );
     pthread_cond_broadcast( & file->files->wr );
@@ -416,6 +389,7 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
     perror("can't block");
     return -1;
   }
+
   if(fileVide(file->files)) {
     pthread_mutex_unlock( & file->files->mutex );
     errno = EAGAIN;
@@ -433,21 +407,12 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
 }
 //****************************************************************************************************************************88fin receive********************************************
 int msg_disconnect(MESSAGE *file){
-size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
-int m=munmap(file->files, len);
-return m;
-
-
-
+  size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
+  int m=munmap(file->files, len);
+  return m;
 }
 
 int msg_unlink(const char *nom){
   int t=shm_unlink(nom);
   return t;
 }
-/*
-int main (void) {
-printf("hello world\n");
-return 0;
-}
-*/
