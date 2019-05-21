@@ -15,7 +15,7 @@ int main(void) {
 
 
   int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("awlss",i,4,8);
+  MESSAGE* mess=msg_connect("axdsaaf",i,4,9);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -32,7 +32,7 @@ if (pidlire==-1) {
   printf("Connection du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-  int t=msg_receive(mess, receivBuf, 8);
+  int t=msg_receive(mess, receivBuf, 5);
 
     printf("Apres Connection  du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
     exit(0);
@@ -50,7 +50,7 @@ if (pidlire==-1) {
             const pid_t pid_fils = getpid();
             printf(" FILS %d\n",pid_fils );
                       int i=O_RDWR ;
-                      MESSAGE* mess=msg_connect("awlss",i);
+                      MESSAGE* mess=msg_connect("axdsaaf",i);
 
                       if(mess == NULL) {
                         perror("erreur de connexion");
@@ -82,7 +82,7 @@ printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",p
        if (pids[i]=pids[5]) {
          /* code */
            char* receivBuf=malloc(sizeof(char)*10);
-            int t=msg_receive(mess, receivBuf, 8);
+            int t=msg_receive(mess, receivBuf, 9);
        }
          printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
   }
@@ -90,14 +90,14 @@ printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",p
   printf("Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-   int t=msg_receive(mess, receivBuf, 8);
+   int t=msg_receive(mess, receivBuf, 5);
 
     printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
 
 
 
   printf("moiiiisis\n");
-   msg_unlink("awlss");
+   msg_unlink("axdsaaf");
    exit(0);
 }
 
