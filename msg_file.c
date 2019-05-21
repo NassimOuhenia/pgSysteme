@@ -1,6 +1,5 @@
 #include "msg_file.h"
 
-
 size_t msg_message_size(MESSAGE * file) {
   return file->files->len_max;
 }
@@ -14,7 +13,6 @@ size_t msg_nb(MESSAGE * file) {
 }
 
 int filePleine(File_M * files) {
-
   return ((files->first == files->last) && ( files->count>0));
 }
 
@@ -31,78 +29,73 @@ int absVal(int a) {
 void init_mutex(File_M *file) {
 
   pthread_mutexattr_t attr;
-   pthread_condattr_t cattr;
+  pthread_condattr_t cattr;
 
-     if(pthread_mutexattr_init(&attr) != 0) {
-          fprintf(stderr, "pthread_mutexattr_init\n");
-          exit(1);
-     }
+  if(pthread_mutexattr_init(&attr) != 0) {
+    fprintf(stderr, "pthread_mutexattr_init\n");
+    exit(1);
+  }
 
-     if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED) != 0) {
-          fprintf(stderr, "pthread_mutexattr_setpshared\n");
-          exit(1);
-     }
+  if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED) != 0) {
+    fprintf(stderr, "pthread_mutexattr_setpshared\n");
+    exit(1);
+  }
 
-     if(pthread_mutex_init(&(file->mutex), &attr) != 0) {
-          fprintf(stderr, "pthread_mutex_init\n");
-          exit(1);
-     }
+  if(pthread_mutex_init(&(file->mutex), &attr) != 0) {
+    fprintf(stderr, "pthread_mutex_init\n");
+    exit(1);
+  }
 
-     if(pthread_mutexattr_init(&attr) != 0) {
-          fprintf(stderr, "pthread_mutexattr_init\n");
-          exit(1);
-     }
+  if(pthread_mutexattr_init(&attr) != 0) {
+    fprintf(stderr, "pthread_mutexattr_init\n");
+    exit(1);
+  }
 
-     if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED) != 0) {
-          fprintf(stderr, "pthread_mutexattr_setpshared\n");
-          exit(1);
-     }
+  if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED) != 0) {
+    fprintf(stderr, "pthread_mutexattr_setpshared\n");
+    exit(1);
+  }
 
-     if(pthread_mutex_init(&(file->mutexLec), &attr) != 0) {
-          fprintf(stderr, "pthread_mutex_init\n");
-          exit(1);
-     }
+  if(pthread_mutex_init(&(file->mutexLec), &attr) != 0) {
+    fprintf(stderr, "pthread_mutex_init\n");
+    exit(1);
+  }
 
-//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------condition------
-     if(pthread_condattr_init(&cattr) != 0) {
-          fprintf(stderr, "pthread_condattr_init\n");
-          exit(1);
-     }
+  if(pthread_condattr_init(&cattr) != 0) {
+    fprintf(stderr, "pthread_condattr_init\n");
+    exit(1);
+  }
 
-     if(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED) != 0) {
-          fprintf(stderr, "pthread_mutexattr_setpshared\n");
-          exit(1);
-     }
+  if(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED) != 0) {
+    fprintf(stderr, "pthread_mutexattr_setpshared\n");
+    exit(1);
+  }
 
-     if(pthread_cond_init(&(file->wr), &cattr) != 0) {
-          fprintf(stderr, "pthread_cond_init\n");
-          exit(1);
-     }
+  if(pthread_cond_init(&(file->wr), &cattr) != 0) {
+    fprintf(stderr, "pthread_cond_init\n");
+    exit(1);
+  }
 
-     if(pthread_condattr_init(&cattr) != 0) {
-          fprintf(stderr, "pthread_condattr_init\n");
-          exit(1);
-     }
+  if(pthread_condattr_init(&cattr) != 0) {
+    fprintf(stderr, "pthread_condattr_init\n");
+    exit(1);
+  }
 
-     if(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED) != 0) {
-          fprintf(stderr, "pthread_mutexattr_setpshared\n");
-          exit(1);
-     }
+  if(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED) != 0) {
+    fprintf(stderr, "pthread_mutexattr_setpshared\n");
+    exit(1);
+  }
 
-     if(pthread_cond_init(&(file->rd), &cattr) != 0) {
-          fprintf(stderr, "pthread_cond_init\n");
-          exit(1);
-     }
+  if(pthread_cond_init(&(file->rd), &cattr) != 0) {
+    fprintf(stderr, "pthread_cond_init\n");
+    exit(1);
+  }
 }
 
-
-//**********************************************************************************************8pour la connection*******************************************************************
-
+//*************8pour la connection*****
 MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
 
-
   printf("%s\n", "creation de file normal");
-
 
   int fd = shm_open(nom, options, S_IRUSR | S_IWUSR);
   if(fd<0) {
@@ -110,17 +103,12 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
     return NULL;
   }
 
-
-
   size_t len = nb_msg*(len_max+sizeof(size_t)) + sizeof(File_M);
 
   ftruncate(fd, len);
 
-
   struct stat bufStat;
   fstat(fd,&bufStat);
-
-//  printf("%ld\n",bufStat.st_size);
 
   File_M *tab = (File_M *) mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if(tab == MAP_FAILED) {
@@ -128,8 +116,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
     return NULL;
   }
 
-  //initialisation de la file-------------------------------------------------------------------------------------------------------------------------------
-
+  //initialisation de la file------------------------------------------------------
   tab->len_max = len_max;
   tab->nb_msg = nb_msg;
   tab->first = -1;
@@ -142,13 +129,10 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   reponse->option = options;
   reponse->files = tab;
 
-
-printf("creation de file CAPACITE %ld\n", msg_capacite(reponse));
+  printf("creation de file CAPACITE %ld\n", msg_capacite(reponse));
   return reponse;
 
-
 }
-
 
 MESSAGE* ouverture_file(const char *nom, int options){
 
@@ -163,8 +147,6 @@ MESSAGE* ouverture_file(const char *nom, int options){
   struct stat bufStat;
   fstat(fd, &bufStat);
   size_t len = bufStat.st_size;
-//  printf("%ld\n",bufStat.st_size);
-
 
   File_M *tab = (File_M *) mmap(0 , len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
@@ -172,8 +154,6 @@ MESSAGE* ouverture_file(const char *nom, int options){
     perror("erreur de mmap");
     return NULL;
   }
-
-
 
   MESSAGE* reponse = malloc( sizeof(MESSAGE));
   reponse->option = options;
@@ -185,14 +165,12 @@ MESSAGE* ouverture_file(const char *nom, int options){
 MESSAGE* creation_file_anonyme(const char *nom, int options, size_t nb_msg, size_t len_max){
 
   size_t len = nb_msg*(len_max+sizeof(size_t)) + sizeof(File_M);
-
   File_M *tab = (File_M *) mmap( 0 , len , PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
 
   if(tab == MAP_FAILED) {
     perror("erreur de mmap");
     return NULL;
   }
-
 
   //initialisation de la file-------------------------------------------------------------------------------------------------------------------------------
 
@@ -240,34 +218,19 @@ MESSAGE *msg_connect( const char *nom, int options,... ){
 //**********************************************************************************************************************fin connection****************************************************
 int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
 
-//  if(len < absVal(files->first - indexEcrire) || fileVide(files)) {
+  memcpy((files->fileMsg+indexEcrire), &len, sizeof(size_t));
 
-    memcpy((files->fileMsg+indexEcrire), &len, sizeof(size_t));
-  //  capacite=capacite-sizeof(size_t);
-    printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire );
-    memcpy((files->fileMsg+indexEcrire+sizeof(size_t)), msg, len);
-    //char* s=malloc(10);
+  printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire );
+  memcpy((files->fileMsg+indexEcrire+sizeof(size_t)), msg, len);
 
-    //  memcpy(s, (files->fileMsg+60),4);
-    printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire+sizeof(size_t));
+  printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire+sizeof(size_t));
 
-    return 0;
-  /* if (capacite<len+1) {
-      int indice=(indexEcrire+sizeof(size_t)+capacite)%capaciteFile;
-          memcpy(files->fileMsg+indice, msg+capacite, len-capacite);
-        //  printf("Lautre moitier par %d ---------------------------%s\n",getpid(),(files->fileMsg+0));
-    }
-    //  printf("%s\n", files->fileMsg);
-    return 0;*/
-/*  } else {
-    perror("ecrire");
-    return -1;
-  }*/
+  return 0;
 }
+
 size_t calculeEspaceWrite(MESSAGE * file){
   int espace=file->files->first-file->files->last;
   if (espace<0) {
-
     return msg_capacite(file)+espace;
 
   }else if(espace>0){
@@ -286,26 +249,10 @@ size_t calculeEspaceWrite(MESSAGE * file){
 
 int majEcriture(MESSAGE * file, size_t len) {
 
-  size_t lenMsg;
-
-
-  memcpy(&lenMsg, file->files->fileMsg+file->files->first, sizeof(size_t));
-
-//printf("%ld kkkkkkkk\n", lenMsg);
-
-    //printf("----- AVANT----dans mise a jou Ecriture first est ----------------------%ld et encien %d message longeur %ld\n",(file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file),file->files->first,lenMsg);
-
-
   int old = file->files->last;
   file->files->count++;
   file->files->last = (file->files->last+len+sizeof(size_t))%msg_capacite(file);
 
-
-  //memcpy(&lenMsg, file->files->fileMsg+file->files->first, sizeof(size_t));
-
-//printf("%ld kkkkkkkkk\n", lenMsg);
-
-  //  printf("----- APRES----dans mise a jou Ecriture first est -----------------------------------%ld et encien %d message longeur %ld\n",(file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file),file->files->first,lenMsg);
   return old;
 }
 
@@ -324,13 +271,6 @@ int lire(File_M * files, void *msg, size_t len, int indexLire ) {
 
   memcpy(msg, files->fileMsg+indexLire+sizeof(size_t), lenMsg);
     printf("%s la longeur du message lu\n",(char*)msg);
-/*
-if (lenMsg+1>capacite) {
-  int indice=(indexLire+sizeof(size_t)+capacite)%capaciteFile;
-  char* autre;
-      memcpy(autre, files->fileMsg+indice, lenMsg+1-capacite);
-      printf("*************Lautre moitier pour lecture %d ---------------------------%s\n",getpid(),autre);
-}*/
 
   return lenMsg;
 
@@ -343,7 +283,7 @@ int majLecture(MESSAGE * file, size_t len) {
 
   int old = file->files->first;
   file->files->count--;
-    printf("nouveauuuuuuuu first est -----------------------------------%ld et encien %d message longeur %ld\n",(file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file),old,lenMsg);
+    printf("nouveauuuuuuuu first est --------------%ld et encien %d message longeur %ld\n",(file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file),old,lenMsg);
   file->files->first = (file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file);
 
   return old;
@@ -359,17 +299,14 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
 
   pthread_mutex_lock( & file->files->mutex );
 
-  printf("Connection du fils %d pour une ecriture  first = %d last = %d\n",getpid(),file->files->first,file->files->last);
-  printf("%d lenght %ld capacite restante %ld\n",filePleine(file->files), calculeEspaceWrite(file),msg_capacite(file)-file->files->last);
+  //printf("Connection du proc %d pour une ecriture  first = %d last = %d\n",getpid(),file->files->first,file->files->last);
+  //printf("%d lenght %ld capacite restante %ld\n",filePleine(file->files), calculeEspaceWrite(file),msg_capacite(file)-file->files->last);
 
-//size_t capaciteAvant=msg_capacite(file)-file->files->last;
-
-  //int val=len+sizeof(size_t)<=calculeEspaceWrite(file) && (msg_capacite(file)-file->files->last)<sizeof(size_t)+len;
   if(len+sizeof(size_t)<=calculeEspaceWrite(file) && (msg_capacite(file)-file->files->last)<sizeof(size_t)+len){
     file->files->last=0;
   }
 
-  while(filePleine(file->files)||len+sizeof(size_t)>calculeEspaceWrite(file)) {
+  while(filePleine(file->files) || calculeEspaceWrite(file) < len+sizeof(size_t)) {
     printf("processus %d en attente\n", (int) getpid());
     int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
   }
@@ -390,8 +327,7 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   return size;
 }
 
-//-------------------------------------------------------------------------------------------------
-/*
+//-------------------------------------------------------------
 int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
   if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
@@ -420,19 +356,23 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
   pthread_cond_broadcast( & file->files->rd );
   return size;
-}*/
+}
 
-//*****************************************************************************************************88receive****************************************************************************
+//*************88receive*****************
 ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
-size_t capaciteAvant=msg_capacite(file)-file->files->first;
-  if(len!=file->files->len_max){
-    printf("taille message a lire incorrect\n" );
+
+  size_t capaciteAvant=msg_capacite(file)-file->files->first;
+  if(file->files->len_max < len){
+    perror("taille message a lire incorrect\n" );
     return -1;
   }
+
   if( (msg_capacite(file)-file->files->first)<sizeof(size_t)+len){
     file->files->first=0;
   }
+
   pthread_mutex_lock( & file->files->mutexLec );
+
   while(fileVide(file->files)) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
   }
@@ -440,19 +380,19 @@ size_t capaciteAvant=msg_capacite(file)-file->files->first;
   int indexLire = majLecture(file,len);
 
   pthread_mutex_unlock( & file->files->mutexLec );
-    pthread_cond_broadcast( & file->files->wr );
+  pthread_cond_broadcast( & file->files->wr );
   int size = lire(file->files, msg, len, indexLire);
-
 
   return size;
 }
-/*
+
 ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
 
   if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
     perror("can't block");
     return -1;
   }
+
   if(fileVide(file->files)) {
     pthread_mutex_unlock( & file->files->mutex );
     errno = EAGAIN;
@@ -468,24 +408,12 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
 
   return size;
 }
-*/
-//****************************************************************************************************************************88fin receive********************************************
+
 int msg_disconnect(MESSAGE *file){
-size_t len = file->files->nb_msg*(file->files->len_max+sizeof(size_t)) + sizeof(File_M);
-int m=munmap(file->files, len);
-return m;
-
-
-
+  size_t len = msg_capacite(file) + sizeof(File_M);
+  return munmap(file->files, len);
 }
 
 int msg_unlink(const char *nom){
-  int t=shm_unlink(nom);
-  return t;
+  return shm_unlink(nom);
 }
-/*
-int main (void) {
-printf("hello world\n");
-return 0;
-}
-*/

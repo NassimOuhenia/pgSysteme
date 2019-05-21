@@ -13,26 +13,15 @@
 #include <syslog.h>
 #include <stdarg.h>
 
-
-
-
-
-#define MODE S_IRUSR | S_IWUSR
-//#define __USE_MISC
-
 typedef struct fileM {
 
   size_t len_max, nb_msg, count;
-  int first, last;
+  int first, last, fin;
+
   pthread_mutex_t mutex;
   pthread_mutex_t mutexLec;
-  //pthread_mutex_t mutexRd;
   pthread_cond_t wr;
   pthread_cond_t rd;
-  //pthread_mutexattr_t send;
-//  pthread_condattr_t c_rd;
-//  pthread_mutexattr_t receive;
-  //pthread_condattr_t c_wr;
 
   char fileMsg[];
 
@@ -44,7 +33,6 @@ typedef struct message {
   File_M * files;
 
 }MESSAGE;
-
 
 size_t msg_message_size(MESSAGE *);
 size_t msg_capacite(MESSAGE *);
