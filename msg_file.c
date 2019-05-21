@@ -309,7 +309,7 @@ int majEcriture(MESSAGE * file, size_t len) {
   return old;
 }
 
-int lire(File_M * files, void *msg, size_t len, int indexLire ,size_t capacite,size_t capaciteFile ) {
+int lire(File_M * files, void *msg, size_t len, int indexLire ) {
 
   size_t lenMsg;
   memcpy(&lenMsg, files->fileMsg+indexLire, sizeof(size_t));
@@ -441,7 +441,7 @@ size_t capaciteAvant=msg_capacite(file)-file->files->first;
 
   pthread_mutex_unlock( & file->files->mutexLec );
     pthread_cond_broadcast( & file->files->wr );
-  int size = lire(file->files, msg, len, indexLire,capaciteAvant,msg_capacite(file));
+  int size = lire(file->files, msg, len, indexLire);
 
 
   return size;
