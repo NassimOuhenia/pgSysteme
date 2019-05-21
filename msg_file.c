@@ -95,7 +95,7 @@ void init_mutex(File_M *file) {
 //*************8pour la connection*****
 MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_max){
 
-  printf("%s\n", "creation de file normal");
+  //printf("%s\n", "creation de file normal");
 
   int fd = shm_open(nom, options, S_IRUSR | S_IWUSR);
   if(fd<0) {
@@ -119,7 +119,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   //initialisation de la file------------------------------------------------------
   tab->len_max = len_max;
   tab->nb_msg = nb_msg;
-  tab->first = -1;
+  tab->first = 0;
   tab->last = 0;
   tab->count = 0;
 
@@ -136,7 +136,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
 
 MESSAGE* ouverture_file(const char *nom, int options){
 
-  printf("%s\n", "ouverture de file");
+  //printf("%s\n", "ouverture de file");
   int fd = shm_open(nom,  options,S_IRUSR | S_IWUSR );
 
   if(fd<0) {
@@ -176,7 +176,7 @@ MESSAGE* creation_file_anonyme(const char *nom, int options, size_t nb_msg, size
 
   tab->len_max = len_max;
   tab->nb_msg = nb_msg;
-  tab->first = -1;
+  tab->first = 0;
   tab->last = 0;
   tab->count = 0;
 
@@ -252,6 +252,7 @@ int majEcriture(MESSAGE * file, size_t len) {
   int old = file->files->last;
   file->files->count++;
   file->files->last = (file->files->last+len+sizeof(size_t))%msg_capacite(file);
+    printf("NOMBRE DE MESSAGE ecriture 444444444444444444444444444444444444  %ld first %d last %d\n",   file->files->count,file->files->first,file->files->last);
 
   return old;
 }
@@ -284,7 +285,9 @@ int majLecture(MESSAGE * file, size_t len) {
   int old = file->files->first;
   file->files->count--;
     printf("nouveauuuuuuuu first est --------------%ld et encien %d message longeur %ld\n",(file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file),old,lenMsg);
+
   file->files->first = (file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file);
+  printf("NOMBRE DE MESSAGE Lecture 444444444444444444444444444444444444444444444444 %ld first %d last %d\n",   file->files->count,file->files->first,file->files->last);
 
   return old;
 }
@@ -367,11 +370,16 @@ ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
     return -1;
   }
 
-  if( (msg_capacite(file)-file->files->first)<sizeof(size_t)+len){
-    file->files->first=0;
-  }
+
 
   pthread_mutex_lock( & file->files->mutexLec );
+  size_t lenMsg;
+  memcpy(&lenMsg, file->files->fileMsg+file->files->first, sizeof(size_t));
+
+  if( (msg_capacite(file)-file->files->first)<sizeof(size_t)+lenMsg){
+    printf("mise a zero 666666666666666666666666666666666666 %ld size %ld\n", msg_capacite(file)-file->files->first,sizeof(size_t)+len);
+    file->files->first=0;
+  }
 
   while(fileVide(file->files)) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
