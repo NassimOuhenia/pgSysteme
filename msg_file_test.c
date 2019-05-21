@@ -8,7 +8,7 @@ int main(void) {
   pid_t pids[7];
 
   int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("ddddss",i,4,9);
+  MESSAGE* mess=msg_connect("dqss",i,4,9);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -26,7 +26,7 @@ int main(void) {
     printf("Connection du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
     char* receivBuf=malloc(sizeof(char)*10);
 
-    int t=msg_receive(mess, receivBuf, 5);
+    int t=msg_tryreceive(mess, receivBuf, 5);
 
     printf("Apres Connection  du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
     exit(0);
@@ -44,14 +44,14 @@ int main(void) {
       const pid_t pid_fils = getpid();
       printf(" FILS %d\n",pid_fils );
       int i=O_RDWR ;
-      MESSAGE* mess=msg_connect("ddddss",i);
+      MESSAGE* mess=msg_connect("dqss",i);
 
       if(mess == NULL) {
         perror("erreur de connexion");
         return 0;
       }
 
-      int t = msg_send(mess, "moiii", 5);
+      int t = msg_trysend(mess, "moiii", 5);
       char * hh;
     //  printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n"
             //  ,pid_fils,mess->files->first,mess->files->last);
@@ -73,7 +73,7 @@ int main(void) {
 
     if (pids[i]=pids[5]) {
       char* receivBuf = malloc(sizeof(char)*10);
-      int t = msg_receive(mess, receivBuf, 9);
+      int t = msg_tryreceive(mess, receivBuf, 9);
     }
     printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
   }
@@ -81,11 +81,11 @@ int main(void) {
   printf("Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-  int t=msg_receive(mess, receivBuf, 5);
+  int t=msg_tryreceive(mess, receivBuf, 5);
 
   printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
 
   printf("moiiiisis\n");
-  msg_unlink("ddddss");
+  msg_unlink("dqss");
   exit(0);
 }

@@ -333,17 +333,23 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
 //-------------------------------------------------------------
 int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
-  if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
-    perror("can't block");
+  if(len>file->files->len_max){
+    printf("message trop grand pour ecriture\n" );
     return -1;
   }
 
-  if(filePleine(file->files)) {
-    pthread_mutex_unlock( & file->files->mutex );
-
-    errno = EAGAIN;
-    perror("try_send");
+  if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
+    perror("can't block0000000000000000000000000000000000000000000000000000000");
     return -1;
+  }
+
+  if(len+sizeof(size_t)<=calculeEspaceWrite(file) && (msg_capacite(file)-file->files->last)<sizeof(size_t)+len){
+    file->files->last=0;
+  }
+
+  while(filePleine(file->files) || calculeEspaceWrite(file) < len+sizeof(size_t)) {
+    printf("processus %d en attente\n", (int) getpid());
+    int n = pthread_cond_wait( & file->files->wr ,& file->files->mutex );
   }
 
   int indexEcrire = majEcriture(file,len);
@@ -351,13 +357,14 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 
   int size = ecrire(file->files, msg, len, indexEcrire);
 
+  pthread_cond_broadcast( & file->files->rd );
+
   if(!size) {
     if(file->files->first == -1) {
       file->files->first = 0;
     }
   }
 
-  pthread_cond_broadcast( & file->files->rd );
   return size;
 }
 
@@ -396,23 +403,34 @@ ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
 
 ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
 
-  if(pthread_mutex_trylock( & file->files->mutex ) != 0) {
-    perror("can't block");
+
+  if(file->files->len_max < len){
+    perror("taille message a lire incorrect\n" );
     return -1;
   }
 
-  if(fileVide(file->files)) {
-    pthread_mutex_unlock( & file->files->mutex );
-    errno = EAGAIN;
-    perror("try_receive");
+  if(pthread_mutex_trylock( & file->files->mutexLec ) != 0) {
+    perror("can't block lecture 33333333333333333333333333333333333333333333333");
     return -1;
+  }
+
+  size_t lenMsg;
+  memcpy(&lenMsg, file->files->fileMsg+file->files->first, sizeof(size_t));
+
+  if( (msg_capacite(file)-file->files->first)<sizeof(size_t)+lenMsg){
+    printf("mise a zero 666666666666666666666666666666666666 %ld size %ld\n", msg_capacite(file)-file->files->first,sizeof(size_t)+len);
+    file->files->first=0;
+  }
+
+  while(fileVide(file->files)) {
+    int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
   }
 
   int indexLire = majLecture(file,len);
-  pthread_mutex_unlock( & file->files->mutex );
 
-  int size = lire(file->files, msg, len, indexLire);
+  pthread_mutex_unlock( & file->files->mutexLec );
   pthread_cond_broadcast( & file->files->wr );
+  int size = lire(file->files, msg, len, indexLire);
 
   return size;
 }
