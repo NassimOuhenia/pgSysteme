@@ -15,7 +15,7 @@ int main(void) {
 
 
   int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("hw",i,4,8);
+  MESSAGE* mess=msg_connect("awlss",i,4,8);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -50,7 +50,7 @@ if (pidlire==-1) {
             const pid_t pid_fils = getpid();
             printf(" FILS %d\n",pid_fils );
                       int i=O_RDWR ;
-                      MESSAGE* mess=msg_connect("hw",i);
+                      MESSAGE* mess=msg_connect("awlss",i);
 
                       if(mess == NULL) {
                         perror("erreur de connexion");
@@ -58,7 +58,7 @@ if (pidlire==-1) {
                       }
 
 
-                      printf("Connection du fils %d pour une ecriture  first = %d last = %d\n",pid_fils,mess->files->first,mess->files->last);
+
 
                       int t=msg_send(mess, "moiii", 5);
                       char * hh;
@@ -97,7 +97,7 @@ printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n",p
 
 
   printf("moiiiisis\n");
-   msg_unlink("hw");
+   msg_unlink("awlss");
    exit(0);
 }
 

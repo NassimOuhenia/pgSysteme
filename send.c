@@ -9,8 +9,8 @@
 //nos test
 int main(void) {
 
-  int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("accmklsdlj1jl",i,20,1000);
+  int i=O_RDWR;//|O_CREAT| O_EXCL;
+  MESSAGE* mess=msg_connect("aw",i,4,8);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -20,7 +20,7 @@ int main(void) {
   printf("first = %d\n",mess->files->first);
   printf("last = %d\n",mess->files->last);
 
-  int t=msg_send(mess, "moi", 3);
+  int t=msg_send(mess, "moiii", 5);
   char * hh;
   printf("apre send\n");
   printf("first = %d\n",mess->files->first);
