@@ -222,10 +222,10 @@ int ecrire(File_M * files, const void *msg, size_t len, int indexEcrire) {
 
   memcpy((files->fileMsg+indexEcrire), &len, sizeof(size_t));
 
-  printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire );
+  //printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire );
   memcpy((files->fileMsg+indexEcrire+sizeof(size_t)), msg, len);
 
-  printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire+sizeof(size_t));
+//  printf(" apres ecriture de la taille par %d on a ---------------------------%s\n",getpid(),files->fileMsg+indexEcrire+sizeof(size_t));
 
   return 0;
 }
@@ -254,7 +254,7 @@ int majEcriture(MESSAGE * file, size_t len) {
   int old = file->files->last;
   file->files->count++;
   file->files->last = (file->files->last+len+sizeof(size_t))%msg_capacite(file);
-    printf("NOMBRE DE MESSAGE ecriture 444444444444444444444444444444444444  %ld first %d last %d\n",   file->files->count,file->files->first,file->files->last);
+    printf("ECRITURE PAR Le processus %d ---- NOMBRE DE MESSAGE %ld -------   first %d last %d\n", getpid(),file->files->count,file->files->first,file->files->last);
 
   return old;
 }
@@ -264,7 +264,7 @@ int lire(File_M * files, void *msg, size_t len, int indexLire ) {
   size_t lenMsg;
   memcpy(&lenMsg, files->fileMsg+indexLire, sizeof(size_t));
 
-  printf("%ld la longeur du message lu\n",lenMsg);
+  //printf("%ld la longeur du message lu\n",lenMsg);
 
   if(len < lenMsg) {
     errno = EMSGSIZE;
@@ -273,7 +273,7 @@ int lire(File_M * files, void *msg, size_t len, int indexLire ) {
   }
 
   memcpy(msg, files->fileMsg+indexLire+sizeof(size_t), lenMsg);
-    printf("%s la longeur du message lu\n",(char*)msg);
+    printf(" PROCESSUS %d lit le message %s de longeur %ld\n",getpid(),(char*)msg,lenMsg);
 
   return lenMsg;
 
@@ -286,10 +286,10 @@ int majLecture(MESSAGE * file, size_t len) {
 
   int old = file->files->first;
   file->files->count--;
-    printf("nouveauuuuuuuu first est --------------%ld et encien %d message longeur %ld\n",(file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file),old,lenMsg);
+    //printf("LECTURE PAR LE PROCESSUS %d -------------- %ld et encien %d message longeur %ld\n",getpid(),(file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file),old,lenMsg);
 
   file->files->first = (file->files->first+lenMsg+sizeof(size_t))%msg_capacite(file);
-  printf("NOMBRE DE MESSAGE Lecture 444444444444444444444444444444444444444444444444 %ld first %d last %d\n",   file->files->count,file->files->first,file->files->last);
+  printf(" LECTURE PAR LE PROCESSUS %d -------------- NOMBRE DE MESSAGE %ld  first %d last %d\n",  getpid(), file->files->count,file->files->first,file->files->last);
 
   return old;
 }

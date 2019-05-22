@@ -8,7 +8,7 @@ int main(void) {
   pid_t pids[7];
 
   int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("dqss",i,4,9);
+  MESSAGE* mess=msg_connect("kll",i,4,9);
 
   if(mess == NULL) {
     perror("erreur de connexion");
@@ -42,9 +42,9 @@ int main(void) {
     } else if(pids[i] == 0) {
       /* processus fils */
       const pid_t pid_fils = getpid();
-      printf(" FILS %d\n",pid_fils );
+
       int i=O_RDWR ;
-      MESSAGE* mess=msg_connect("dqss",i);
+      MESSAGE* mess=msg_connect("kll",i);
 
       if(mess == NULL) {
         perror("erreur de connexion");
@@ -86,6 +86,6 @@ int main(void) {
   printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
 
   printf("moiiiisis\n");
-  msg_unlink("dqss");
+  msg_unlink("kll");
   exit(0);
 }
