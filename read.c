@@ -18,12 +18,12 @@ int main(void) {
   //int t=msg_send(mess, "moi", 3);
 
   char * hh;
-  printf("apre send\n");
-  printf("first = %d\n",mess->files->first);
-  printf("last = %d\n",mess->files->last);
 
   ssize_t f= msg_receive(mess, hh, 8);
-  printf("first = %d\n",mess->files->first);
+
+  printf("après receive first = %d\n",mess->files->first);
+  printf("message reçu = %s\n....", hh);
+  sleep(1);
 
   return 0;
 
