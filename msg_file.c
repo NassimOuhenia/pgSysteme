@@ -121,6 +121,7 @@ MESSAGE* creation_file(const char *nom, int options, size_t nb_msg, size_t len_m
   tab->nb_msg = nb_msg;
   tab->first = 0;
   tab->last = 0;
+  tab->fin = -1;
   tab->count = 0;
 
   init_mutex(tab);
@@ -178,6 +179,7 @@ MESSAGE* creation_file_anonyme(const char *nom, int options, size_t nb_msg, size
   tab->nb_msg = nb_msg;
   tab->first = 0;
   tab->last = 0;
+  tab->fin = -1;
   tab->count = 0;
 
   init_mutex(tab);
@@ -305,7 +307,8 @@ int msg_send(MESSAGE *file, const void *msg, size_t len) {
   //printf("Connection du proc %d pour une ecriture  first = %d last = %d\n",getpid(),file->files->first,file->files->last);
   //printf("%d lenght %ld capacite restante %ld\n",filePleine(file->files), calculeEspaceWrite(file),msg_capacite(file)-file->files->last);
 
-  if(len+sizeof(size_t)<=calculeEspaceWrite(file) && (msg_capacite(file)-file->files->last)<sizeof(size_t)+len){
+  if((msg_capacite(file)-file->files->last)<sizeof(size_t)+len) {
+    file->files->fin = file->files->last;
     file->files->last=0;
   }
 
@@ -343,7 +346,9 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
     return -1;
   }
 
-  if(len+sizeof(size_t)<=calculeEspaceWrite(file) && (msg_capacite(file)-file->files->last)<sizeof(size_t)+len){
+  if((msg_capacite(file)-file->files->last)<sizeof(size_t)+len){
+    file->files->fin = file->files->last;
+
     file->files->last=0;
   }
 
@@ -371,25 +376,22 @@ int msg_trysend(MESSAGE *file, const void *msg, size_t len) {
 //*************88receive*****************
 ssize_t msg_receive(MESSAGE *file, void *msg, size_t len) {
 
-  size_t capaciteAvant=msg_capacite(file)-file->files->first;
+  size_t capaciteAvant = msg_capacite(file)-file->files->first;
   if(file->files->len_max < len){
     perror("taille message a lire incorrect\n" );
     return -1;
   }
 
-
-
   pthread_mutex_lock( & file->files->mutexLec );
-  size_t lenMsg;
-  memcpy(&lenMsg, file->files->fileMsg+file->files->first, sizeof(size_t));
-
-  if( (msg_capacite(file)-file->files->first)<sizeof(size_t)+lenMsg){
-    printf("mise a zero 666666666666666666666666666666666666 %ld size %ld\n", msg_capacite(file)-file->files->first,sizeof(size_t)+len);
-    file->files->first=0;
-  }
 
   while(fileVide(file->files)) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
+  }
+
+  if(file->files->first == file->files->fin){
+    printf("mise a zero 666666666666666666666666666666666666 %ld size %ld\n", capaciteAvant,sizeof(size_t)+len);
+    file->files->first = 0;
+    file->files->fin = -1;
   }
 
   int indexLire = majLecture(file,len);
@@ -414,18 +416,16 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
     return -1;
   }
 
-  size_t lenMsg;
-  memcpy(&lenMsg, file->files->fileMsg+file->files->first, sizeof(size_t));
-
-  if( (msg_capacite(file)-file->files->first)<sizeof(size_t)+lenMsg){
-    printf("mise a zero 666666666666666666666666666666666666 %ld size %ld\n", msg_capacite(file)-file->files->first,sizeof(size_t)+len);
-    file->files->first=0;
-  }
-
   while(fileVide(file->files)) {
     int n = pthread_cond_wait( & file->files->rd ,& file->files->mutexLec );
   }
 
+  if(file->files->first == file->files->fin){
+    printf("mise a zero 666666666666666666666666666666666666 %ld size %ld\n", capaciteAvant,sizeof(size_t)+len);
+    file->files->first = 0;
+    file->files->fin = -1;
+  }
+  
   int indexLire = majLecture(file,len);
 
   pthread_mutex_unlock( & file->files->mutexLec );
