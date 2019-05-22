@@ -421,11 +421,11 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
   }
 
   if(file->files->first == file->files->fin){
-    printf("mise a zero 666666666666666666666666666666666666 %ld size %ld\n", capaciteAvant,sizeof(size_t)+len);
+    printf("mise a zero 666666666666666666666666666666666666 size %ld\n",sizeof(size_t)+len);
     file->files->first = 0;
     file->files->fin = -1;
   }
-  
+
   int indexLire = majLecture(file,len);
 
   pthread_mutex_unlock( & file->files->mutexLec );
