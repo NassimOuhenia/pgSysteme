@@ -5,7 +5,7 @@
 int main(void) {
 
   int i=O_RDWR;//|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("kll",i,4,8);
+  MESSAGE* mess=msg_connect("kllls",i,4,8);
 
   if(mess == NULL) {
     perror("erreur de connexion");
