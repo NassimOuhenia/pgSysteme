@@ -44,6 +44,7 @@ int main(void) {
       const pid_t pid_fils = getpid();
 
       int i=O_RDWR ;
+
       MESSAGE* mess=msg_connect("kll",i);
 
       if(mess == NULL) {
@@ -53,9 +54,9 @@ int main(void) {
 
       int t = msg_trysend(mess, "moiii", 5);
       char * hh;
-    //  printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n"
-            //  ,pid_fils,mess->files->first,mess->files->last);
 
+      printf("deconnexion...\n");
+      sleep(1);
       msg_disconnect(mess);
 
       exit(0);
@@ -69,6 +70,7 @@ int main(void) {
 
     waitpid(pids[i], NULL, 0);
     printf("-------------------------processus père: fils %d mort\n", pids[i]);
+    sleep(1);
     printf("Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
 
     if (pids[i]=pids[5]) {

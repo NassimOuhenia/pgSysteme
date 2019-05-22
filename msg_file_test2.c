@@ -27,7 +27,7 @@ int main(void) {
     char* receivBuf=malloc(sizeof(char)*10);
 
     int t=msg_receive(mess, receivBuf, 5);
-
+    sleep(1);
     printf("Apres Connection  du fils %d pour une lecture first = %d last = %d \n",getpid(),mess->files->first,mess->files->last);
     exit(0);
   }
@@ -52,10 +52,7 @@ int main(void) {
       }
 
       int t = msg_send(mess, "moiii", 5);
-      char * hh;
-    //  printf("Apres Connection du fils %d pour une ecriture  first = %d last = %d\n"
-            //  ,pid_fils,mess->files->first,mess->files->last);
-
+      sleep(1);
       msg_disconnect(mess);
 
       exit(0);
@@ -81,8 +78,8 @@ int main(void) {
   printf("Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
   char* receivBuf=malloc(sizeof(char)*10);
 
-  int t=msg_receive(mess, receivBuf, 5);
-
+  int t = msg_receive(mess, receivBuf, 5);
+  sleep(1);
   printf("Apres Connection du pere pour une lecture first = %d last = %d \n",mess->files->first,mess->files->last);
 
   printf("moiiiisis\n");
