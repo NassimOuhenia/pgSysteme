@@ -421,7 +421,7 @@ ssize_t msg_tryreceive(MESSAGE *file, void *msg, size_t len) {
   }
 
   if(file->files->first == file->files->fin){
-    printf("mise a zero 666666666666666666666666666666666666 size %ld\n",sizeof(size_t)+len);
+    printf("mise a zero 666666666666666666666666666666666666\n");
     file->files->first = 0;
     file->files->fin = -1;
   }
