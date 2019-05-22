@@ -9,8 +9,8 @@
 //nos test
 int main(void) {
 
-  int i=O_RDWR|O_CREAT| O_EXCL;
-  MESSAGE* mess=msg_connect("aw",i,4,8);
+  int i=O_RDWR;//|O_CREAT| O_EXCL;
+  MESSAGE* mess=msg_connect("aws",i,4,8);
 
   if(mess == NULL) {
     perror("erreur de connexion");
